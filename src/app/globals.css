@@ -1,0 +1,86 @@
+@import "tailwindcss";
+
+:root {
+  --radius: 0.875rem;
+
+  /* Brand tokens */
+  --primary: #7667f5;
+  --primary-hover: #6555e8;
+  --primary-light: #f0eeff;
+  --accent: #a99dff;
+  --navy: #101827;
+  --background: #f5f6fa;
+  --surface: #ffffff;
+  --foreground: #101827;
+  --secondary-text: #64748b;
+  --muted-text: #94a3b8;
+  --border: #e5e7eb;
+  --success: #16a34a;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+}
+
+@theme inline {
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-light: var(--primary-light);
+  --color-accent: var(--accent);
+  --color-navy: var(--navy);
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-foreground: var(--foreground);
+  --color-secondary-text: var(--secondary-text);
+  --color-muted-text: var(--muted-text);
+  --color-border: var(--border);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-sora), ui-sans-serif, system-ui, sans-serif;
+
+  --radius-md: 0.75rem;
+  --radius-lg: var(--radius);
+  --radius-xl: 1.125rem;
+
+  --shadow-card: 0 1px 2px rgb(16 24 39 / 0.04), 0 4px 16px rgb(16 24 39 / 0.04);
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+
+  body {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-heading);
+    color: var(--navy);
+  }
+
+  /* Rendered websites use only their own tokens, never the platform's. */
+  .site-root {
+    background: var(--site-background);
+    color: var(--site-text);
+    font-family: var(--site-font-body);
+  }
+
+  .site-root * {
+    border-color: var(--site-border);
+  }
+
+  .site-root h1,
+  .site-root h2,
+  .site-root h3,
+  .site-root h4 {
+    color: inherit;
+    font-family: var(--site-font-heading);
+  }
+}

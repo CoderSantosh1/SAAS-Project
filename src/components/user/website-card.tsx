@@ -86,10 +86,10 @@ export function WebsiteCard({ website }: { website: MyWebsite }) {
         )}
 
         <div className="mt-4 flex flex-wrap gap-1 border-t border-border pt-3">
-          <span aria-disabled="true" title="The editor is coming soon" className={DISABLED}>
+          <Link href={`/editor/${website.id}`} className={ENABLED}>
             <Pencil className="size-4" aria-hidden />
             Edit
-          </span>
+          </Link>
           <a href={`/preview/sites/${website.id}`} target="_blank" rel="noopener" className={ENABLED}>
             <Eye className="size-4" aria-hidden />
             Preview

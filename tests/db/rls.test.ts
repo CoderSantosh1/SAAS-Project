@@ -96,6 +96,7 @@ describe("function privileges", () => {
     expect(await executableBy("anon")).toEqual([
       "get_marketplace_theme",
       "get_published_site",
+      "get_theme_preview",
       "is_template_public",
       "is_theme_published",
       "is_theme_version_published",

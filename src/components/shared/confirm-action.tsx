@@ -11,6 +11,7 @@ export function ConfirmAction({
   title,
   description,
   confirmLabel,
+  confirmVariant = "danger",
   action,
 }: {
   trigger: ReactNode;
@@ -18,6 +19,7 @@ export function ConfirmAction({
   title: string;
   description: string;
   confirmLabel: string;
+  confirmVariant?: "danger" | "primary";
   action: () => Promise<Result>;
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -57,7 +59,7 @@ export function ConfirmAction({
           <Button type="button" variant="secondary" disabled={pending} onClick={() => dialogRef.current?.close()}>
             Cancel
           </Button>
-          <Button type="button" variant="danger" disabled={pending} onClick={confirm}>
+          <Button type="button" variant={confirmVariant} disabled={pending} onClick={confirm}>
             {pending ? "Working..." : confirmLabel}
           </Button>
         </div>

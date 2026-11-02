@@ -2,15 +2,23 @@ import type { Metadata } from "next";
 import { Inter, Sora } from "next/font/google";
 import type { ReactNode } from "react";
 import { brand } from "@/config/brand";
+import { getPlatformSettings } from "@/features/settings/queries";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 const sora = Sora({ subsets: ["latin"], variable: "--font-sora" });
 
-export const metadata: Metadata = {
-  title: { default: `${brand.name} | ${brand.tagline}`, template: `%s | ${brand.name}` },
-  description: brand.description,
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await getPlatformSettings();
+  return {
+    title: {
+      default: settings.seoTitle || `${settings.name} | ${brand.tagline}`,
+      template: `%s | ${settings.name}`,
+    },
+    description: settings.seoDescription || brand.description,
+    icons: settings.faviconUrl ? { icon: settings.faviconUrl } : undefined,
+  };
+}
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (

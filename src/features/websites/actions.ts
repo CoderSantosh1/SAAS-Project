@@ -41,7 +41,7 @@ export async function createWebsite(values: CreateWebsiteValues): Promise<Action
   const input = parsed.data;
 
   const supabase = await createClient();
-  const { error } = await supabase.rpc("create_website", {
+  const { data: createdId, error } = await supabase.rpc("create_website", {
     p_theme_slug: input.themeSlug,
     p_name: input.name,
     p_slug: input.slug,
@@ -62,8 +62,7 @@ export async function createWebsite(values: CreateWebsiteValues): Promise<Action
   }
 
   revalidatePath("/dashboard", "layout");
-  // Goes straight to the editor once it exists.
-  redirect("/dashboard/websites?created=1");
+  redirect(`/editor/${createdId}`);
 }
 
 export async function updateWebsite(id: string, values: WebsiteBasicsValues): Promise<ActionResult> {

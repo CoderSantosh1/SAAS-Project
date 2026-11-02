@@ -1,4 +1,4 @@
-import { Inter, Lora, Playfair_Display, Sora, Space_Grotesk } from "next/font/google";
+import { Cormorant_Garamond, Inter, Lora, Playfair_Display, Sora, Space_Grotesk } from "next/font/google";
 
 // The fonts a site can use. preload is off because each site needs only two of them.
 const inter = Inter({ subsets: ["latin"], variable: "--font-site-inter", preload: false });
@@ -6,7 +6,14 @@ const sora = Sora({ subsets: ["latin"], variable: "--font-site-sora", preload: f
 const playfair = Playfair_Display({ subsets: ["latin"], variable: "--font-site-playfair", preload: false });
 const spaceGrotesk = Space_Grotesk({ subsets: ["latin"], variable: "--font-site-space-grotesk", preload: false });
 const lora = Lora({ subsets: ["latin"], variable: "--font-site-lora", preload: false });
+const cormorant = Cormorant_Garamond({
+  subsets: ["latin"],
+  weight: ["500", "600", "700"],
+  style: ["normal", "italic"],
+  variable: "--font-site-cormorant",
+  preload: false,
+});
 
-export const siteFontClassName = [inter, sora, playfair, spaceGrotesk, lora]
+export const siteFontClassName = [inter, sora, playfair, spaceGrotesk, lora, cormorant]
   .map((font) => font.variable)
   .join(" ");

@@ -10,13 +10,9 @@ import { requireUser } from "@/lib/auth/session";
 
 export const metadata: Metadata = { title: "My Websites" };
 
-export default async function MyWebsitesPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ created?: string }>;
-}) {
+export default async function MyWebsitesPage() {
   await requireUser();
-  const [websites, { created }] = await Promise.all([listMyWebsites(), searchParams]);
+  const websites = await listMyWebsites();
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
@@ -30,12 +26,6 @@ export default async function MyWebsitesPage({
           </Link>
         }
       />
-
-      {created === "1" && (
-        <p role="status" className="rounded-md bg-success/10 px-4 py-3 text-sm text-green-800">
-          Your website is ready as a private draft. Use Preview to see it.
-        </p>
-      )}
 
       {websites.length === 0 ? (
         <Card className="flex flex-col items-center p-12 text-center">

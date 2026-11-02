@@ -4,8 +4,10 @@ import { beforeAll, describe, expect, it } from "vitest";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { createStarterDocument, getTheme, listThemeDefinitions } from "@/themes/registry";
-import { findPage, parseSiteDocument, SiteRenderer } from "@/themes/renderer";
+import { findPage, parseSiteDocument, renderSectionContent, SiteRenderer } from "@/themes/renderer";
+import { getSectionDefinition, listSectionDefinitions } from "@/themes/sections";
 import { sectionSchemas, type SiteDocument } from "@/themes/types";
+import { z } from "zod";
 import { createTestDb, queryAs, type TestDb } from "../db/setup";
 
 const definitions = listThemeDefinitions();
@@ -51,22 +53,49 @@ describe.each(definitions)("theme $name", (definition) => {
 
   it("produces a valid document whose starter content passes every schema", () => {
     expect(parseSiteDocument(document)).not.toBeNull();
+    const theme = getTheme(definition.componentId, definition.version);
     for (const page of definition.pages) {
       for (const section of page.sections) {
-        const result = sectionSchemas[section.type].safeParse(section.props);
-        expect(result.success, `${page.slug}/${section.type}`).toBe(true);
+        const sectionDefinition = getSectionDefinition(theme, section.type);
+        expect(sectionDefinition, `${page.slug}/${section.type} is a known type`).not.toBeNull();
+        const result = sectionDefinition!.schema.safeParse(section.props);
+        expect(result.success, `${page.slug}/${section.type}: ${JSON.stringify(result.error?.issues[0])}`).toBe(true);
       }
     }
   });
 
-  it("renders every page with its starter content", () => {
+  it("renders every section of every page", () => {
+    const theme = getTheme(definition.componentId, definition.version)!;
     for (const page of definition.pages) {
       const html = render(document, page.isHome ? undefined : page.slug);
-      const first = page.sections[0]!;
       expect(html, page.slug).toContain(document.siteName);
-      if ("heading" in first.props && first.props.heading) {
-        expect(html, page.slug).toContain(first.props.heading.replaceAll("'", "&#x27;"));
+      for (const section of page.sections) {
+        const markup = renderToStaticMarkup(createElement("div", null, renderSectionContent(theme, section, (href) => href)));
+        expect(markup.length, `${page.slug}/${section.type} rendered nothing`).toBeGreaterThan(20);
       }
+    }
+  });
+
+  it("gives every page exactly one h1", () => {
+    for (const page of definition.pages) {
+      const html = render(document, page.isHome ? undefined : page.slug);
+      expect(html.match(/<h1[\s>]/g)?.length, page.slug).toBe(1);
+    }
+  });
+
+  it("declares valid custom sections", () => {
+    const theme = getTheme(definition.componentId, definition.version)!;
+    for (const [type, section] of Object.entries(theme.components.customSections ?? {})) {
+      expect(type, "lowercase with hyphens").toMatch(/^[a-z][a-z0-9]*(-[a-z0-9]+)*$/);
+      expect(Object.hasOwn(sectionSchemas, type), `${type} reuses a built-in type`).toBe(false);
+      expect(section.label.trim(), `${type} label`).not.toBe("");
+      const defaults = section.schema.safeParse(section.defaults);
+      expect(defaults.success, `${type} defaults: ${JSON.stringify(defaults.error?.issues[0])}`).toBe(true);
+      const shape = (section.schema as unknown as { shape?: Record<string, unknown> }).shape ?? {};
+      for (const field of section.fields) {
+        expect(Object.hasOwn(shape, field.key), `${type} field "${field.key}" is not in its schema`).toBe(true);
+      }
+      expect(z.toJSONSchema(section.schema, { unrepresentable: "any" })).toBeTruthy();
     }
   });
 
@@ -205,34 +234,37 @@ describe("database seed", () => {
     db = await createTestDb();
   }, 60_000);
 
-  it("matches the registry for every theme", async () => {
+  // Read directly, because a new code theme starts in review and visitors cannot see it.
+  it("has a database row for every registered theme, matching the code", async () => {
     for (const definition of definitions) {
-      const result = await queryAs<{ component_id: string; version: string; design_tokens: unknown; current: boolean }>(
-        db,
-        null,
-        `select v.component_id, v.version, v.design_tokens, t.current_version_id = v.id as current
+      const result = await db.query<{ component_id: string; component_version: string; version: string; design_tokens: unknown; current: boolean }>(
+        `select v.component_id, v.component_version, v.version, v.design_tokens, t.current_version_id = v.id as current
          from public.theme_versions v join public.themes t on t.id = v.theme_id
          where t.slug = $1`,
         [definition.slug],
       );
-      expect(result.rows).toEqual([
-        { component_id: definition.componentId, version: definition.version, design_tokens: definition.tokens, current: true },
+      expect(result.rows, `${definition.slug}: run pnpm themes:seed`).toEqual([
+        {
+          component_id: definition.componentId,
+          component_version: definition.version,
+          version: definition.version,
+          design_tokens: definition.tokens,
+          current: true,
+        },
       ]);
     }
   });
 
-  it("publishes a visible template in each theme's categories", async () => {
+  it("gives each theme a template in its categories", async () => {
     for (const definition of definitions) {
-      const result = await queryAs<{ slug: string }>(
-        db,
-        null,
+      const result = await db.query<{ slug: string }>(
         `select c.slug from public.template_categories tc
          join public.categories c on c.id = tc.category_id
          join public.templates t on t.id = tc.template_id
          where t.slug = $1`,
         [definition.slug],
       );
-      expect(result.rows.map((row) => row.slug).sort()).toEqual([...definition.categories].sort());
+      expect(result.rows.map((row) => row.slug).sort(), definition.slug).toEqual([...definition.categories].sort());
     }
   });
 
@@ -245,7 +277,10 @@ describe("database seed", () => {
        where v.component_id = $1`,
       [firstTheme!.componentId],
     );
-    expect(result.rows.map((row) => row.section_type).sort()).toEqual(Object.keys(sectionSchemas).sort());
+    const theme = getTheme(firstTheme!.componentId, firstTheme!.version);
+    expect(result.rows.map((row) => row.section_type).sort()).toEqual(
+      listSectionDefinitions(theme).map((definition) => definition.type).sort(),
+    );
     expect(result.rows.every((row) => row.props_schema.type === "object")).toBe(true);
   });
 });

@@ -29,7 +29,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Analytics", href: "/dashboard/analytics", icon: BarChart3, ready: false },
   { label: "Billing", href: "/dashboard/billing", icon: CreditCard, ready: false },
   { label: "Settings", href: "/dashboard/settings", icon: Settings, ready: true },
-  { label: "Help and Support", href: "/dashboard/support", icon: LifeBuoy, ready: false },
+  { label: "Help and Support", href: "/dashboard/support", icon: LifeBuoy, ready: true },
 ];
 
 export function UserSidebar() {

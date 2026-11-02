@@ -32,6 +32,7 @@ export type MarketplaceTheme = {
   supported_features: string[];
   thumbnail_url: string | null;
   version: string | null;
+  primary_color: string | null;
   categories: { name: string; slug: string }[];
 };
 
@@ -79,12 +80,3 @@ export async function listPlans() {
   return (data ?? []) as PublicPlan[];
 }
 
-export async function getContactEmail() {
-  const { data, error } = await createPublicClient()
-    .from("platform_settings")
-    .select("value")
-    .eq("key", "contact.email")
-    .maybeSingle();
-  if (error) throw new Error(`Could not load contact details: ${error.message}`);
-  return typeof data?.value === "string" ? data.value : null;
-}

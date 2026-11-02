@@ -1,9 +1,7 @@
-import { LayoutTemplate } from "lucide-react";
 import Link from "next/link";
 import { ScaledFrame } from "@/components/shared/scaled-frame";
 import { Card } from "@/components/ui/card";
 import type { MarketplaceTemplate } from "@/features/marketplace/queries";
-import { getThemeDefinitionBySlug } from "@/themes/registry";
 
 function ThemeImage({ template }: { template: MarketplaceTemplate }) {
   const className = "aspect-[4/3] w-full border-b border-border";
@@ -22,21 +20,13 @@ function ThemeImage({ template }: { template: MarketplaceTemplate }) {
   }
 
   // Without an uploaded thumbnail, show the real theme.
-  if (getThemeDefinitionBySlug(template.theme_slug)) {
-    return (
-      <ScaledFrame
-        src={`/preview/themes/${template.theme_slug}`}
-        title={`${template.name} preview`}
-        deviceWidth={1280}
-        className={className}
-      />
-    );
-  }
-
   return (
-    <div className={`${className} flex items-center justify-center bg-primary-light text-primary`}>
-      <LayoutTemplate className="size-10" aria-hidden />
-    </div>
+    <ScaledFrame
+      src={`/preview/themes/${template.theme_slug}`}
+      title={`${template.name} preview`}
+      deviceWidth={1280}
+      className={className}
+    />
   );
 }
 

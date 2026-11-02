@@ -2,6 +2,7 @@
 
 import { isAuthRetryableFetchError } from "@supabase/supabase-js";
 import { redirect } from "next/navigation";
+import { getPlatformSettings } from "@/features/settings/queries";
 import { safeNextPath } from "@/lib/auth/routes";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -80,6 +81,10 @@ export async function adminLogin(values: LoginValues, next?: string): Promise<Au
 export async function register(values: RegisterValues, next?: string): Promise<AuthResult> {
   const parsed = registerSchema.safeParse(values);
   if (!parsed.success) return { error: INVALID_INPUT };
+
+  if (!(await getPlatformSettings()).registrationsOpen) {
+    return { error: "New registrations are closed at the moment." };
+  }
 
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signUp({

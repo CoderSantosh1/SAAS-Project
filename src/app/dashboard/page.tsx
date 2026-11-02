@@ -78,7 +78,7 @@ export default async function DashboardPage() {
             <ul className="mt-3 divide-y divide-border">
               {data.recent.map((website) => (
                 <li key={website.id} className="flex items-center justify-between gap-4 py-3 text-sm">
-                  <Link href={`/dashboard/websites/${website.id}/settings`} className="truncate font-medium hover:text-primary">
+                  <Link href={`/editor/${website.id}`} className="truncate font-medium hover:text-primary">
                     {website.name}
                   </Link>
                   <span className="shrink-0 text-secondary-text capitalize">{website.status}</span>

@@ -2,7 +2,7 @@
 
 Your Website. Your Vision. A multi-tenant, no-code website builder.
 
-The product name lives in `src/config/brand.ts`. See [docs/architecture.md](docs/architecture.md) for how the system fits together.
+The product name lives in `src/config/brand.ts`. See [docs/architecture.md](docs/architecture.md) for how the system fits together, and [docs/theme-development.md](docs/theme-development.md) to build a theme.
 
 ## Setup
 

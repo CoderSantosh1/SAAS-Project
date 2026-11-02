@@ -1,15 +1,17 @@
-// Writes a migration that registers the code-level themes in the database, so the
-// marketplace rows always come from the registry instead of being typed by hand.
+// Writes a migration that registers code-level themes in the database, so the marketplace
+// rows always come from the registry instead of being typed by hand.
 //
-//   pnpm themes:seed <migration_name>
+//   pnpm themes:seed <migration_name> --only <theme-slug> [--status under_review]
 //
 // A theme version already in the database is immutable. To change a theme, add a new
 // version to the registry and generate a new migration containing only that theme.
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { z } from "zod";
-import { listThemeDefinitions } from "../src/themes/registry";
-import { SECTION_LABELS, sectionSchemas, type SectionType, type ThemeDefinition } from "../src/themes/types";
+import { getTheme, listThemeDefinitions } from "../src/themes/registry";
+import { buildSectionRows } from "../src/themes/section-rows";
+import type { ThemeDefinition } from "../src/themes/types";
+
+const STATUSES = ["draft", "under_review", "published"] as const;
 
 function text(value: string) {
   return `'${value.replaceAll("'", "''")}'`;
@@ -19,35 +21,25 @@ function json(value: unknown) {
   return `${text(JSON.stringify(value))}::jsonb`;
 }
 
-function usedSections(definition: ThemeDefinition) {
-  const firstUse = new Map<SectionType, unknown>();
-  for (const page of definition.pages) {
-    for (const section of page.sections) {
-      if (!firstUse.has(section.type)) firstUse.set(section.type, section.props);
-    }
-  }
-  return firstUse;
-}
-
-function themeSql(definition: ThemeDefinition) {
+function themeSql(definition: ThemeDefinition, status: (typeof STATUSES)[number]) {
   const slug = text(definition.slug);
+  const theme = getTheme(definition.componentId, definition.version)!;
   const versionId = `(select v.id from public.theme_versions v join public.themes t on t.id = v.theme_id where t.slug = ${slug} and v.version = ${text(definition.version)})`;
 
-  const sections = (Object.keys(sectionSchemas) as SectionType[]).map((type, index) => {
-    const defaults = usedSections(definition).get(type) ?? {};
-    return `insert into public.theme_sections (theme_version_id, section_type, label, default_props, props_schema, display_order)
-values (${versionId}, ${text(type)}, ${text(SECTION_LABELS[type])}, ${json(defaults)}, ${json(z.toJSONSchema(sectionSchemas[type]))}, ${index * 10});`;
-  });
+  const sections = buildSectionRows(theme, definition.pages).map(
+    (row, index) => `insert into public.theme_sections (theme_version_id, section_type, label, default_props, props_schema, display_order)
+values (${versionId}, ${text(row.type)}, ${text(row.label)}, ${json(row.default_props)}, ${json(row.props_schema)}, ${index * 10});`,
+  );
 
   return `-- ${definition.name} ${definition.version}
-insert into public.themes (name, slug, description, category_id, status, is_featured, author_name, supported_features, desktop_preview_url, mobile_preview_url, preview_url)
+insert into public.themes (name, slug, description, category_id, status, is_featured, author_name, supported_features, preview_url)
 values (${text(definition.name)}, ${slug}, ${text(definition.description)},
   (select id from public.categories where slug = ${text(definition.primaryCategory)}),
-  'published', ${definition.isFeatured}, ${text(definition.authorName)}, ${json(definition.supportedFeatures)},
-  null, null, ${text(`/preview/themes/${definition.slug}`)});
+  ${text(status)}, ${definition.isFeatured}, ${text(definition.authorName)}, ${json(definition.supportedFeatures)},
+  ${text(`/preview/themes/${definition.slug}`)});
 
-insert into public.theme_versions (theme_id, version, component_id, status, default_config, design_tokens, compatibility)
-select id, ${text(definition.version)}, ${text(definition.componentId)}, 'stable', ${json({ pages: definition.pages })}, ${json(definition.tokens)}, ${json(definition.compatibility)}
+insert into public.theme_versions (theme_id, version, component_id, component_version, status, default_config, design_tokens, compatibility)
+select id, ${text(definition.version)}, ${text(definition.componentId)}, ${text(definition.version)}, 'stable', ${json({ pages: definition.pages })}, ${json(definition.tokens)}, ${json(definition.compatibility)}
 from public.themes where slug = ${slug};
 
 update public.themes set current_version_id = ${versionId} where slug = ${slug};
@@ -65,15 +57,30 @@ where t.slug = ${slug} and c.slug in (${definition.categories.map(text).join(", 
 `;
 }
 
-const name = process.argv[2];
-if (!name || !/^\d{14}_[a-z0-9_]+$/.test(name)) {
-  console.error("Usage: pnpm themes:seed <timestamp_name>, for example 20261031000007_seed_themes");
+const [name, ...rest] = process.argv.slice(2);
+const option = (flag: string) => {
+  const index = rest.indexOf(flag);
+  return index === -1 ? undefined : rest[index + 1];
+};
+const only = option("--only");
+const status = (option("--status") ?? "under_review") as (typeof STATUSES)[number];
+
+if (!name || !/^\d{14}_[a-z0-9_]+$/.test(name) || !only || !STATUSES.includes(status)) {
+  console.error("Usage: pnpm themes:seed <timestamp_name> --only <theme-slug> [--status draft|under_review|published]");
+  console.error("Example: pnpm themes:seed 20261103000013_seed_lexora --only lexora");
+  process.exit(1);
+}
+
+const definitions = listThemeDefinitions().filter((definition) => definition.slug === only);
+if (definitions.length === 0) {
+  console.error(`No registered theme has the slug "${only}".`);
   process.exit(1);
 }
 
 const sql = `-- Generated by scripts/generate-theme-seed.ts. Do not edit by hand.
+-- New code themes arrive for review, and an admin publishes them from the admin panel.
 
-${listThemeDefinitions().map(themeSql).join("\n")}`;
+${definitions.map((definition) => themeSql(definition, status)).join("\n")}`;
 
 const target = join(process.cwd(), "supabase", "migrations", `${name}.sql`);
 writeFileSync(target, sql);

@@ -29,6 +29,10 @@ const image = z.object({
   alt: z.string().max(200),
 });
 
+// Safe building blocks for a theme's own section schemas. Use these for any text, link or
+// image, so a custom section gets the same protection as the built-in ones.
+export const fieldSchemas = { shortText, longText, link, button, image, imageUrl: imageUrlSchema };
+
 export const sectionSchemas = {
   hero: z.object({
     eyebrow: shortText.optional(),
@@ -111,7 +115,7 @@ export const SECTION_LABELS: Record<SectionType, string> = {
 
 const hexColor = z.string().regex(/^#[0-9a-fA-F]{6}$/);
 
-export const FONT_IDS = ["inter", "sora", "playfair", "space-grotesk", "lora"] as const;
+export const FONT_IDS = ["inter", "sora", "playfair", "space-grotesk", "lora", "cormorant"] as const;
 
 export const designTokensSchema = z.object({
   primary: hexColor,
@@ -127,6 +131,15 @@ export const designTokensSchema = z.object({
 });
 
 export type DesignTokens = z.infer<typeof designTokensSchema>;
+
+// Per-section overrides. Colors reach CSS variables, so they must be plain hex values.
+export const sectionDesignSchema = z.object({
+  backgroundColor: hexColor.optional(),
+  textColor: hexColor.optional(),
+  paddingY: z.enum(["none", "sm", "md", "lg"]).optional(),
+});
+
+export type SectionDesign = z.infer<typeof sectionDesignSchema>;
 
 const pageSlug = z.string().regex(/^[a-z0-9]+(-[a-z0-9]+)*$/);
 
@@ -149,6 +162,7 @@ export const siteDocumentSchema = z.object({
           z.object({
             type: z.string(),
             props: z.unknown(),
+            design: z.unknown().optional(),
             isVisible: z.boolean().default(true),
           }),
         ),
@@ -160,9 +174,10 @@ export const siteDocumentSchema = z.object({
 export type SiteDocument = z.infer<typeof siteDocumentSchema>;
 export type SitePage = SiteDocument["pages"][number];
 
-export type StarterSection = {
-  [T in SectionType]: { type: T; props: SectionProps<T> };
-}[SectionType];
+export type StarterSection =
+  | { [T in SectionType]: { type: T; props: SectionProps<T> } }[SectionType]
+  // A theme's own section type. Its props are checked against that section's schema in tests.
+  | { type: string; props: Record<string, unknown> };
 
 export type StarterPage = {
   title: string;
@@ -193,15 +208,49 @@ export type SectionComponentProps<T extends SectionType> = {
   resolveHref: (href: string) => string;
 };
 
+// Describes one field in the editor's properties panel.
+export type SectionField =
+  | { kind: "text" | "textarea" | "link"; key: string; label: string; hint?: string }
+  | { kind: "imageUrl"; key: string; label: string }
+  | { kind: "image"; key: string; label: string }
+  | { kind: "button"; key: string; label: string }
+  | { kind: "select"; key: string; label: string; options: { value: string; label: string }[] }
+  | { kind: "list"; key: string; label: string; itemLabel: string; fields: SectionField[]; newItem: Record<string, unknown> };
+
+// A section type that only one theme offers. The schema is the security boundary: stored
+// props reach the component only after passing it.
+export type CustomSection = {
+  label: string;
+  schema: z.ZodType<Record<string, unknown>>;
+  fields: SectionField[];
+  defaults: Record<string, unknown>;
+  component: ComponentType<{ props: Record<string, unknown>; resolveHref: (href: string) => string }>;
+  // True when the section renders the page's h1, as a hero does.
+  providesPageHeading?: boolean;
+};
+
+export function defineSection<S extends z.ZodType<Record<string, unknown>>>(section: {
+  label: string;
+  schema: S;
+  fields: SectionField[];
+  defaults: z.input<S>;
+  component: ComponentType<{ props: z.output<S>; resolveHref: (href: string) => string }>;
+  providesPageHeading?: boolean;
+}): CustomSection {
+  return section as unknown as CustomSection;
+}
+
 export type ThemeComponents = {
   sections: { [T in SectionType]: ComponentType<SectionComponentProps<T>> };
+  // Keys must be lowercase-with-hyphens and must not reuse a built-in section type.
+  customSections?: Record<string, CustomSection>;
   Header: ComponentType<{
     siteName: string;
     logoUrl?: string;
     homeHref: string;
     links: { label: string; href: string }[];
   }>;
-  Footer: ComponentType<{ siteName: string }>;
+  Footer: ComponentType<{ siteName: string; links?: { label: string; href: string }[] }>;
 };
 
 export type RegisteredTheme = {

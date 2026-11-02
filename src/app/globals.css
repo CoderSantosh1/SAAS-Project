@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "../themes/styles.css";
 
 :root {
   --radius: 0.875rem;
@@ -74,6 +75,22 @@
 
   .site-root * {
     border-color: var(--site-border);
+  }
+
+  .site-root [data-spacing="none"] > section {
+    padding-block: 0;
+  }
+
+  .site-root [data-spacing="sm"] > section {
+    padding-block: 2rem;
+  }
+
+  .site-root [data-spacing="md"] > section {
+    padding-block: 4rem;
+  }
+
+  .site-root [data-spacing="lg"] > section {
+    padding-block: 8rem;
   }
 
   .site-root h1,

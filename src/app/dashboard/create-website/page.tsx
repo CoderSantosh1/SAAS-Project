@@ -12,7 +12,6 @@ import { Card } from "@/components/ui/card";
 import { getTheme, listCategories, listTemplates } from "@/features/marketplace/queries";
 import { CreateWebsiteForm } from "@/features/websites/components/create-website-form";
 import { requireUser } from "@/lib/auth/session";
-import { getThemeDefinitionBySlug } from "@/themes/registry";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Create Website" };
@@ -119,8 +118,8 @@ export default async function CreateWebsitePage({
     );
   }
 
-  const [theme, definition] = [await getTheme(themeSlug), getThemeDefinitionBySlug(themeSlug)];
-  if (!theme || !definition) notFound();
+  const theme = await getTheme(themeSlug);
+  if (!theme) notFound();
 
   const categorySlug = category && category !== "all" ? category : undefined;
 
@@ -152,7 +151,7 @@ export default async function CreateWebsitePage({
         <CreateWebsiteForm
           themeSlug={themeSlug}
           categorySlug={categorySlug}
-          defaultColor={definition.tokens.primary}
+          defaultColor={theme.primary_color ?? "#7667F5"}
           categories={theme.categories}
         />
       </Card>

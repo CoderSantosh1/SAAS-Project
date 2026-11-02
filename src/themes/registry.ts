@@ -2,8 +2,11 @@ import { atelierComponents } from "./implementations/atelier/components";
 import { atelierDefinition } from "./implementations/atelier/definition";
 import { hearthComponents } from "./implementations/hearth/components";
 import { hearthDefinition } from "./implementations/hearth/definition";
+import { lexoraComponents } from "./implementations/lexora/components";
+import { lexoraDefinition } from "./implementations/lexora/definition";
 import { meridianComponents } from "./implementations/meridian/components";
 import { meridianDefinition } from "./implementations/meridian/definition";
+// theme:imports (pnpm theme:new adds imports above this line)
 import type { RegisteredTheme, SiteDocument, ThemeDefinition } from "./types";
 
 // The only themes that can render. Published sites record the exact version they
@@ -12,6 +15,8 @@ const REGISTERED_THEMES: RegisteredTheme[] = [
   { definition: meridianDefinition, components: meridianComponents },
   { definition: atelierDefinition, components: atelierComponents },
   { definition: hearthDefinition, components: hearthComponents },
+  { definition: lexoraDefinition, components: lexoraComponents },
+  // theme:entries (pnpm theme:new adds entries above this line)
 ];
 
 export function getTheme(componentId: string, version: string) {

@@ -7,7 +7,6 @@ import { PUBLIC_CONTAINER } from "@/components/public/page-header";
 import { ThemePreview } from "@/components/public/theme-preview";
 import { buttonVariants } from "@/components/ui/button";
 import { getTheme } from "@/features/marketplace/queries";
-import { getThemeDefinitionBySlug } from "@/themes/registry";
 
 const loadTheme = cache(getTheme);
 
@@ -34,7 +33,7 @@ export default async function ThemePage({ params }: Props) {
   const theme = await loadTheme(slug);
   if (!theme) notFound();
 
-  const previewSrc = getThemeDefinitionBySlug(theme.slug) ? `/preview/themes/${theme.slug}` : null;
+  const previewSrc = `/preview/themes/${theme.slug}`;
 
   return (
     <div className={`${PUBLIC_CONTAINER} py-10 sm:py-14`}>
@@ -58,23 +57,19 @@ export default async function ThemePage({ params }: Props) {
           {theme.description && <p className="mt-3 text-lg text-secondary-text">{theme.description}</p>}
         </div>
         <div className="flex flex-wrap gap-3">
-          {previewSrc && (
-            <a href={previewSrc} target="_blank" rel="noopener" className={buttonVariants({ variant: "secondary", size: "lg" })}>
-              Full preview
-              <ExternalLink className="size-4" aria-hidden />
-            </a>
-          )}
+          <a href={previewSrc} target="_blank" rel="noopener" className={buttonVariants({ variant: "secondary", size: "lg" })}>
+            Full preview
+            <ExternalLink className="size-4" aria-hidden />
+          </a>
           <Link href={`/dashboard/create-website?theme=${theme.slug}`} className={buttonVariants({ size: "lg" })}>
             Use This Theme
           </Link>
         </div>
       </div>
 
-      {previewSrc && (
-        <div className="mt-10">
-          <ThemePreview src={previewSrc} title={theme.name} />
-        </div>
-      )}
+      <div className="mt-10">
+        <ThemePreview src={previewSrc} title={theme.name} />
+      </div>
 
       <div className="mt-12 grid gap-10 md:grid-cols-2">
         {theme.supported_features.length > 0 && (

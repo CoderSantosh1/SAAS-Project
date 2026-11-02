@@ -1,7 +1,6 @@
 import { Menu } from "lucide-react";
 import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
-import { brand } from "@/config/brand";
 import { PUBLIC_CONTAINER } from "./page-header";
 
 const LINKS = [
@@ -12,13 +11,26 @@ const LINKS = [
   { label: "About", href: "/about" },
 ];
 
-export function SiteHeader() {
+export function SiteHeader({
+  name,
+  logoUrl,
+  registrationsOpen,
+}: {
+  name: string;
+  logoUrl: string;
+  registrationsOpen: boolean;
+}) {
   return (
     <header className="sticky top-0 z-20 border-b border-border bg-surface">
       <div className={`${PUBLIC_CONTAINER} flex h-16 items-center justify-between gap-4`}>
         <div className="flex items-center gap-8">
           <Link href="/" className="font-heading text-xl font-bold text-primary">
-            {brand.name}
+            {logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={logoUrl} alt={name} className="h-9 w-auto max-w-40 object-contain" />
+            ) : (
+              name
+            )}
           </Link>
           <nav aria-label="Main" className="hidden items-center gap-6 md:flex">
             {LINKS.map((link) => (
@@ -38,9 +50,11 @@ export function SiteHeader() {
             <Link href="/login" className={buttonVariants({ variant: "ghost" })}>
               Sign in
             </Link>
-            <Link href="/register" className={buttonVariants()}>
-              Start Building Free
-            </Link>
+            {registrationsOpen && (
+              <Link href="/register" className={buttonVariants()}>
+                Start Building Free
+              </Link>
+            )}
           </div>
 
           {/* A details element, so the menu also works without JavaScript. */}
@@ -55,7 +69,11 @@ export function SiteHeader() {
               aria-label="Mobile"
               className="absolute top-12 right-0 flex w-56 flex-col rounded-lg border border-border bg-surface p-2 shadow-card"
             >
-              {[...LINKS, { label: "Sign in", href: "/login" }, { label: "Start Building Free", href: "/register" }].map(
+              {[
+                ...LINKS,
+                { label: "Sign in", href: "/login" },
+                ...(registrationsOpen ? [{ label: "Start Building Free", href: "/register" }] : []),
+              ].map(
                 (link) => (
                   <Link
                     key={link.href}

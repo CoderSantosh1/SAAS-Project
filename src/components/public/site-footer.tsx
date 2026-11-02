@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { brand } from "@/config/brand";
 import { PUBLIC_CONTAINER } from "./page-header";
 
 const GROUPS = [
@@ -28,13 +27,32 @@ const GROUPS = [
   },
 ];
 
-export function SiteFooter() {
+export function SiteFooter({
+  name,
+  tagline,
+  social,
+}: {
+  name: string;
+  tagline: string;
+  social: { label: string; url: string }[];
+}) {
   return (
     <footer className="bg-navy text-white">
       <div className={`${PUBLIC_CONTAINER} grid gap-8 py-12 sm:grid-cols-2 md:grid-cols-4`}>
         <div>
-          <p className="font-heading text-xl font-bold">{brand.name}</p>
-          <p className="mt-2 text-sm text-white/70">{brand.tagline}</p>
+          <p className="font-heading text-xl font-bold">{name}</p>
+          <p className="mt-2 text-sm text-white/70">{tagline}</p>
+          {social.length > 0 && (
+            <ul className="mt-3 flex flex-wrap gap-x-3 gap-y-1">
+              {social.map((link) => (
+                <li key={link.label}>
+                  <a href={link.url} target="_blank" rel="noopener noreferrer" className="text-sm text-white/70 hover:text-white">
+                    {link.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
         {GROUPS.map((group) => (
           <div key={group.title}>
@@ -53,7 +71,7 @@ export function SiteFooter() {
       </div>
       <div className="border-t border-white/10">
         <p className={`${PUBLIC_CONTAINER} py-5 text-xs text-white/70`}>
-          &copy; {new Date().getFullYear()} {brand.name}. Create. Customize. Publish.
+          &copy; {new Date().getFullYear()} {name}. Create. Customize. Publish.
         </p>
       </div>
     </footer>

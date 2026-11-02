@@ -90,8 +90,8 @@ describe("create_website", () => {
 
     await db.exec(`
       insert into public.themes (name, slug, status) values ('Secret', 'secret', 'draft');
-      insert into public.theme_versions (theme_id, version, component_id)
-        select id, '1.0.0', 'meridian' from public.themes where slug = 'secret';
+      insert into public.theme_versions (theme_id, version, component_id, component_version)
+        select id, '1.0.0', 'meridian', '1.0.0' from public.themes where slug = 'secret';
       update public.themes set current_version_id = (
         select v.id from public.theme_versions v join public.themes t on t.id = v.theme_id where t.slug = 'secret'
       ) where slug = 'secret';

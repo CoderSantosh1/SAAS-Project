@@ -1,13 +1,14 @@
-import type { CSSProperties } from "react";
+import { Fragment, type CSSProperties, type ReactNode } from "react";
 import { getTheme } from "./registry";
+import { getSectionDefinition } from "./sections";
 import {
-  sectionSchemas,
+  sectionDesignSchema,
   siteDocumentSchema,
   type DesignTokens,
-  type SectionType,
+  type RegisteredTheme,
+  type SectionDesign,
   type SiteDocument,
   type SitePage,
-  type ThemeComponents,
 } from "./types";
 
 const RADIUS_VALUES: Record<DesignTokens["radius"], string> = {
@@ -22,6 +23,7 @@ const FONT_VARIABLES: Record<DesignTokens["headingFont"], string> = {
   playfair: "--font-site-playfair",
   "space-grotesk": "--font-site-space-grotesk",
   lora: "--font-site-lora",
+  cormorant: "--font-site-cormorant",
 };
 
 export function tokensToCssVariables(tokens: DesignTokens) {
@@ -52,28 +54,54 @@ export function findPage(document: SiteDocument, slug?: string): SitePage | null
   return page?.isVisible ? page : null;
 }
 
-function isSectionType(type: string): type is SectionType {
-  return Object.hasOwn(sectionSchemas, type);
+function designStyle(design: SectionDesign) {
+  const style: Record<string, string> = {};
+  if (design.backgroundColor) {
+    style.background = design.backgroundColor;
+    style["--site-background"] = design.backgroundColor;
+    style["--site-surface"] = design.backgroundColor;
+  }
+  if (design.textColor) {
+    style.color = design.textColor;
+    style["--site-text"] = design.textColor;
+    style["--site-muted"] = design.textColor;
+  }
+  return style as CSSProperties;
 }
 
-function renderSection(
-  components: ThemeComponents,
-  section: SitePage["sections"][number],
-  key: number,
+// Stored content can name only section types this code knows, and must pass that
+// type's schema. Anything else returns null rather than being rendered.
+export function renderSectionContent(
+  theme: RegisteredTheme,
+  section: { type: string; props: unknown; design?: unknown },
   resolveHref: (href: string) => string,
-) {
-  // Stored content can name only section types this code knows, and must pass that
-  // type's schema. Anything else is skipped rather than rendered.
-  if (!section.isVisible || !isSectionType(section.type)) return null;
+): ReactNode {
+  const definition = getSectionDefinition(theme, section.type);
+  if (!definition) return null;
 
-  const parsed = sectionSchemas[section.type].safeParse(section.props);
+  const parsed = definition.schema.safeParse(section.props);
   if (!parsed.success) return null;
 
-  const Component = components.sections[section.type] as React.ComponentType<{
+  const Component = definition.component as React.ComponentType<{
     props: unknown;
     resolveHref: (href: string) => string;
   }>;
-  return <Component key={key} props={parsed.data} resolveHref={resolveHref} />;
+  const element = <Component props={parsed.data} resolveHref={resolveHref} />;
+
+  const design = sectionDesignSchema.safeParse(section.design ?? {});
+  if (!design.success || Object.keys(design.data).length === 0) return element;
+
+  return (
+    <div style={designStyle(design.data)} data-spacing={design.data.paddingY}>
+      {element}
+    </div>
+  );
+}
+
+export function providesPageHeading(theme: RegisteredTheme, type: string) {
+  if (type === "hero") return true;
+  const custom = theme.components.customSections;
+  return Boolean(custom && Object.hasOwn(custom, type) && custom[type]!.providesPageHeading);
 }
 
 export function SiteRenderer({
@@ -107,19 +135,22 @@ export function SiteRenderer({
   return (
     <div
       style={tokensToCssVariables(document.tokens)}
+      data-theme={theme.definition.componentId}
       className={`site-root flex min-h-dvh flex-col ${className ?? ""}`}
     >
       <Header siteName={document.siteName} logoUrl={document.logoUrl} homeHref={homeHref} links={links} />
       <main className="flex-1">
-        {/* Only hero sections render an h1, and every page needs one. */}
-        {!page.sections.some((section) => section.type === "hero" && section.isVisible) && (
+        {/* Every page needs one h1, and only some sections render it. */}
+        {!page.sections.some((section) => section.isVisible && providesPageHeading(theme, section.type)) && (
           <h1 className="sr-only">{page.title}</h1>
         )}
         {page.sections.map((section, index) =>
-          renderSection(theme.components, section, index, resolveHref),
+          section.isVisible ? (
+            <Fragment key={index}>{renderSectionContent(theme, section, resolveHref)}</Fragment>
+          ) : null,
         )}
       </main>
-      <Footer siteName={document.siteName} />
+      <Footer siteName={document.siteName} links={links} />
     </div>
   );
 }

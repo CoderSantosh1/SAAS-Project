@@ -2,6 +2,7 @@
 
 import {
   BarChart3,
+  Code2,
   CreditCard,
   Globe,
   Image as ImageIcon,
@@ -25,6 +26,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Create Website", href: "/dashboard/create-website", icon: PlusCircle, ready: true },
   { label: "Templates", href: "/dashboard/templates", icon: Sparkles, ready: true },
   { label: "Media Library", href: "/dashboard/media", icon: ImageIcon, ready: true },
+  { label: "Theme Code", href: "/dashboard/theme-code", icon: Code2, ready: true },
   { label: "Domains", href: "/dashboard/domains", icon: Link2, ready: false },
   { label: "Analytics", href: "/dashboard/analytics", icon: BarChart3, ready: false },
   { label: "Billing", href: "/dashboard/billing", icon: CreditCard, ready: false },

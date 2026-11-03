@@ -6,7 +6,8 @@ import { useEffect, useRef, useState } from "react";
 // the number is right before scripts run, in previews without scripts, and with reduced
 // motion. Any theme can use it.
 export function CountUp({ value }: { value: string }) {
-  const match = value.match(/^(\D*)([\d,]+)(.*)$/);
+  // Only a single number counts up, so values like "1:8" or "9–5" stay as written.
+  const match = value.match(/^(\D*)([\d,]+)(\D*)$/);
   const target = match ? Number(match[2]!.replaceAll(",", "")) : NaN;
   const ref = useRef<HTMLSpanElement>(null);
   const [shown, setShown] = useState<number | null>(null);

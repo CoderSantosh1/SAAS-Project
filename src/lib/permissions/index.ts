@@ -16,6 +16,7 @@ export const PERMISSIONS = [
   "support.manage",
   "activity_logs.view",
   "settings.manage",
+  "themes.download_code",
 ] as const;
 
 export type Permission = (typeof PERMISSIONS)[number];

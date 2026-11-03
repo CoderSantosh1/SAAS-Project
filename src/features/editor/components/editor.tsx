@@ -10,6 +10,7 @@ import {
   Layers,
   Menu,
   Monitor,
+  MousePointerClick,
   Palette,
   Redo2,
   Rocket,
@@ -27,9 +28,9 @@ import { brand } from "@/config/brand";
 import { resolveThemeTokens } from "@/features/websites/document";
 import { getTheme } from "@/themes/registry";
 import { getSectionDefinition } from "@/themes/sections";
-import { createHistory, historyReducer, updateSection } from "../state";
+import { createHistory, historyReducer, setPath, updateSection } from "../state";
 import type { EditorData, EditorDocument } from "../types";
-import { Canvas, type Device } from "./canvas";
+import { Canvas, type Device, type FieldFocus, type InlineEdit } from "./canvas";
 import { PropertiesPanel } from "./properties-panel";
 import {
   DesignPanel,
@@ -82,6 +83,7 @@ export function Editor({ data, fontClassName }: { data: EditorData; fontClassNam
     () => (document.pages.find((page) => page.isHome) ?? document.pages[0]!).id,
   );
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [fieldFocus, setFieldFocus] = useState<(FieldFocus & { at: number }) | null>(null);
 
   // Undo or a restored version can remove the page in view, or the selected section.
   const page = document.pages.find((candidate) => candidate.id === pageId) ?? document.pages[0]!;
@@ -125,6 +127,16 @@ export function Editor({ data, fontClassName }: { data: EditorData; fontClassNam
     if (id) setPanel("sections");
   };
 
+  // Text typed straight into the canvas. The section is looked up on every page, as the
+  // owner may have switched pages before the edit finished.
+  const editInline = ({ sectionId, path, value }: InlineEdit) => {
+    const owner = document.pages.find((candidate) => candidate.sections.some((section) => section.id === sectionId));
+    const section = owner?.sections.find((candidate) => candidate.id === sectionId);
+    if (!owner || !section) return;
+    const props = setPath(section.props, path, value) as Record<string, unknown>;
+    edit(updateSection(document, owner.id, sectionId, { props }), `${sectionId}:${path.join(".")}`);
+  };
+
   const theme = getTheme(data.component_id!, data.version!);
   const panelProps: PanelProps = {
     websiteId: data.id,
@@ -149,6 +161,24 @@ export function Editor({ data, fontClassName }: { data: EditorData; fontClassNam
           {brand.name}
         </Link>
         <span className="max-w-48 truncate text-sm font-semibold">{document.name}</span>
+        <label className="flex items-center gap-1.5 text-xs text-secondary-text">
+          <span className="sr-only sm:not-sr-only">Page</span>
+          <select
+            value={page.id}
+            onChange={(event) => {
+              setPageId(event.target.value);
+              setSelectedId(null);
+            }}
+            className="h-8 max-w-40 rounded-md border border-border bg-surface px-2 text-sm font-medium text-foreground"
+          >
+            {document.pages.map((candidate) => (
+              <option key={candidate.id} value={candidate.id}>
+                {candidate.title}
+                {candidate.isHome ? " (home)" : ""}
+              </option>
+            ))}
+          </select>
+        </label>
         <span role="status" className={`flex items-center gap-1 text-xs ${status.className}`}>
           <status.icon className="size-3.5" aria-hidden />
           {status.text}
@@ -246,18 +276,26 @@ export function Editor({ data, fontClassName }: { data: EditorData; fontClassNam
           </div>
         </aside>
 
-        <main className="min-h-64 min-w-0 flex-1 p-3">
-          <Canvas
-            document={document}
-            page={page}
-            themeId={data.component_id!}
-            themeVersion={data.version!}
-            themeTokens={data.design_tokens}
-            device={device}
-            selectedId={selected?.id ?? null}
-            onSelect={select}
-            fontClassName={fontClassName}
-          />
+        <main className="flex min-h-64 min-w-0 flex-1 flex-col gap-2 bg-[radial-gradient(var(--border)_1px,transparent_1px)] [background-size:16px_16px] p-3">
+          <p className="flex items-center justify-center gap-1.5 text-xs text-secondary-text">
+            <MousePointerClick className="size-3.5 text-primary" aria-hidden />
+            Click any text to type over it. Click a photo or section to see its settings.
+          </p>
+          <div className="min-h-0 flex-1">
+            <Canvas
+              document={document}
+              page={page}
+              themeId={data.component_id!}
+              themeVersion={data.version!}
+              themeTokens={data.design_tokens}
+              device={device}
+              selectedId={selected?.id ?? null}
+              onSelect={select}
+              onInlineEdit={editInline}
+              onFocusField={(focus) => setFieldFocus({ ...focus, at: Date.now() })}
+              fontClassName={fontClassName}
+            />
+          </div>
         </main>
 
         <aside className="max-h-[40dvh] min-h-0 shrink-0 overflow-hidden border-t border-border bg-surface lg:max-h-none lg:w-80 lg:border-t-0 lg:border-l">
@@ -265,6 +303,7 @@ export function Editor({ data, fontClassName }: { data: EditorData; fontClassNam
             key={selected?.id ?? "none"}
             section={selected}
             definition={selected ? getSectionDefinition(theme, selected.type) : null}
+            fieldFocus={fieldFocus && fieldFocus.sectionId === selected?.id ? fieldFocus : null}
             onChange={(changes, key) => {
               if (selected) edit(updateSection(document, page.id, selected.id, changes), key);
             }}

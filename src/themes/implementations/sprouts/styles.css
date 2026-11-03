@@ -1,0 +1,111 @@
+/* Little Sprouts theme styles, scoped to the theme's root. The playful colors are fixed
+   decoration; text and buttons follow the site's own tokens. */
+
+[data-theme="sprouts"] {
+  --sp-sun: #ffc93c;
+  --sp-coral: #ff7a59;
+  --sp-mint: #3cc5a0;
+  --sp-grape: #8e6cef;
+  --sp-sky: #4fb3ff;
+  --sp-cream: color-mix(in srgb, var(--sp-sun) 14%, white);
+}
+
+[data-theme="sprouts"] .sp-shell {
+  margin-inline: auto;
+  width: 100%;
+  max-width: 1200px;
+  padding-inline: clamp(16px, 4vw, 32px);
+}
+
+[data-theme="sprouts"] .sp-blob {
+  border-radius: 58% 42% 46% 54% / 52% 44% 56% 48%;
+}
+
+[data-theme="sprouts"] .sp-blob-2 {
+  border-radius: 42% 58% 60% 40% / 48% 56% 44% 52%;
+}
+
+/* Hand-drawn style underline for highlighted words. */
+[data-theme="sprouts"] .sp-underline {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 16' preserveAspectRatio='none'%3E%3Cpath d='M3 11c40-8 90-10 194-3' fill='none' stroke='%23FFC93C' stroke-width='6' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-position: 0 100%;
+  background-repeat: no-repeat;
+  background-size: 100% 0.45em;
+  padding-bottom: 0.08em;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    [data-theme="sprouts"] .sp-reveal {
+      animation: sp-pop linear both;
+      animation-timeline: view();
+      animation-range: entry 0% cover 20%;
+    }
+  }
+
+  [data-theme="sprouts"] .sp-bob {
+    animation: sp-bob 4s ease-in-out infinite;
+  }
+
+  [data-theme="sprouts"] .sp-spin {
+    animation: sp-spin 18s linear infinite;
+  }
+
+  [data-theme="sprouts"] .sp-wiggle:hover {
+    animation: sp-wiggle 0.5s ease-in-out;
+  }
+}
+
+@keyframes sp-pop {
+  from {
+    opacity: 0;
+    scale: 0.94;
+    translate: 0 24px;
+  }
+  to {
+    opacity: 1;
+    scale: 1;
+    translate: 0 0;
+  }
+}
+
+@keyframes sp-bob {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  50% {
+    translate: 0 -10px;
+  }
+}
+
+@keyframes sp-spin {
+  to {
+    rotate: 360deg;
+  }
+}
+
+@keyframes sp-wiggle {
+  0%,
+  100% {
+    rotate: 0deg;
+  }
+  30% {
+    rotate: -3deg;
+  }
+  60% {
+    rotate: 3deg;
+  }
+}
+
+[data-theme="sprouts"] details.sp-faq > summary {
+  list-style: none;
+}
+
+[data-theme="sprouts"] details.sp-faq > summary::-webkit-details-marker {
+  display: none;
+}
+
+[data-theme="sprouts"] details.sp-faq[open] .sp-faq-icon {
+  rotate: 45deg;
+}

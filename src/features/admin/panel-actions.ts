@@ -321,3 +321,27 @@ export async function saveSettings(_: FormResult, form: FormData): Promise<FormR
   updateTag(PUBLIC_DATA_TAG);
   return { message: "Settings saved." };
 }
+
+// ---------------------------------------------------------------- Theme code access
+export async function grantThemeCode(themeId: string, _: FormResult, form: FormData) {
+  if (!uuid.safeParse(themeId).success) return { error: "Theme not found." };
+  const email = z.email().safeParse(field(form, "email").trim());
+  if (!email.success) return { error: "Enter the customer's email address." };
+  const days = field(form, "days");
+  const expires = days && days !== "never" ? new Date(Date.now() + Number(days) * 86_400_000).toISOString() : null;
+  const note = field(form, "note").trim().slice(0, 300) || null;
+  const { result } = await run(
+    "themes.download_code",
+    "admin_grant_theme_code",
+    { p_theme_id: themeId, p_email: email.data, p_note: note, p_expires_at: expires },
+    [`/admin/themes/${themeId}`],
+    "We could not give access.",
+  );
+  return result.error ? result : { message: `${email.data} can now download this theme's code.` };
+}
+
+export async function revokeThemeCode(themeId: string, grantId: string) {
+  if (!uuid.safeParse(grantId).success) return { error: "Access not found." };
+  const { result } = await run("themes.download_code", "admin_revoke_theme_code", { p_grant_id: grantId }, [`/admin/themes/${themeId}`], "We could not remove access.");
+  return result.error ? result : { message: "Access removed." };
+}

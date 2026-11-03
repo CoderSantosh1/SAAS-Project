@@ -2,3 +2,5 @@
    Each theme's file must scope its rules to [data-theme="<component-id>"]. */
 @import "./implementations/lexora/styles.css";
 @import "./implementations/bloom/styles.css";
+@import "./implementations/crestview/styles.css";
+@import "./implementations/sprouts/styles.css";

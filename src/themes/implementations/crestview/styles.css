@@ -1,0 +1,77 @@
+/* Crestview theme styles, scoped to the theme's root. Tints derive from the site's
+   primary color; the gold is a fixed accent that suits any primary. */
+
+[data-theme="crestview"] {
+  --cv-gold: #c9a23f;
+  --cv-deep: color-mix(in srgb, var(--site-primary) 82%, black);
+  --cv-tint: color-mix(in srgb, var(--site-primary) 8%, white);
+  --cv-line: color-mix(in srgb, var(--site-primary) 18%, white);
+}
+
+[data-theme="crestview"] .cv-shell {
+  margin-inline: auto;
+  width: 100%;
+  max-width: 1240px;
+  padding-inline: clamp(16px, 4vw, 32px);
+}
+
+/* Content is always visible: the entrance runs only where scroll-driven animation works. */
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    [data-theme="crestview"] .cv-reveal {
+      animation: cv-rise linear both;
+      animation-timeline: view();
+      animation-range: entry 0% cover 20%;
+    }
+  }
+
+  [data-theme="crestview"] .cv-hero-photo {
+    animation: cv-settle 1.8s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+}
+
+@keyframes cv-rise {
+  from {
+    opacity: 0;
+    translate: 0 32px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+@keyframes cv-settle {
+  from {
+    scale: 1.12;
+  }
+  to {
+    scale: 1;
+  }
+}
+
+/* A thin gold rule under section labels. */
+[data-theme="crestview"] .cv-label::after {
+  content: "";
+  display: block;
+  width: 2.5rem;
+  height: 2px;
+  margin-top: 0.6rem;
+  background: var(--cv-gold);
+}
+
+[data-theme="crestview"] .cv-label-center::after {
+  margin-inline: auto;
+}
+
+[data-theme="crestview"] details.cv-faq > summary {
+  list-style: none;
+}
+
+[data-theme="crestview"] details.cv-faq > summary::-webkit-details-marker {
+  display: none;
+}
+
+[data-theme="crestview"] details.cv-faq[open] .cv-faq-icon {
+  rotate: 45deg;
+}

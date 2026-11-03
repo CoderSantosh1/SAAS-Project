@@ -76,3 +76,36 @@ export async function listCategoryOptions() {
   if (error) throw new Error(`Could not load categories: ${error.message}`);
   return ((data ?? []) as CategoryOption[]).map(({ id, name }) => ({ id, name }));
 }
+
+export type ThemeCodeGrant = {
+  id: string;
+  email: string;
+  full_name: string | null;
+  note: string | null;
+  expires_at: string | null;
+  created_at: string;
+  granted_by_email: string | null;
+};
+
+export async function listThemeCodeGrants(themeId: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("admin_list_theme_code_grants", { p_theme_id: themeId });
+  if (error) throw new Error(`Could not load code access: ${error.message}`);
+  return (data ?? []) as ThemeCodeGrant[];
+}
+
+export type MyThemeCode = {
+  theme_id: string;
+  name: string;
+  slug: string;
+  thumbnail_url: string | null;
+  expires_at: string | null;
+  granted_at: string;
+};
+
+export async function listMyThemeCode() {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("list_my_theme_code");
+  if (error) throw new Error(`Could not load your theme code: ${error.message}`);
+  return (data ?? []) as MyThemeCode[];
+}

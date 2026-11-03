@@ -8,8 +8,11 @@ import { Card } from "@/components/ui/card";
 import { ActivateVersionButton, ThemeActions } from "@/features/themes/components/theme-actions";
 import { EditThemeForm, NewVersionForm } from "@/features/themes/components/theme-forms";
 import { ThemeStatusBadge } from "@/features/themes/components/theme-status-badge";
-import { getAdminTheme, listCategoryOptions } from "@/features/themes/queries";
+import { ThemeCodeAccess } from "@/features/themes/components/theme-code-access";
+import { getAdminTheme, listCategoryOptions, listThemeCodeGrants } from "@/features/themes/queries";
 import { requireAdmin } from "@/lib/auth/session";
+import { can } from "@/lib/permissions";
+import { getTheme } from "@/themes/registry";
 
 export const metadata: Metadata = { title: "Manage theme" };
 
@@ -20,17 +23,21 @@ export default async function ManageThemePage({
   params: Promise<{ themeId: string }>;
   searchParams: Promise<{ uploaded?: string }>;
 }) {
-  await requireAdmin("themes.manage");
+  const { access } = await requireAdmin("themes.manage");
+  const canDownload = can(access, "themes.download_code");
   const { themeId } = await params;
   if (!z.uuid().safeParse(themeId).success) notFound();
 
-  const [theme, categories, { uploaded }] = await Promise.all([
+  const [theme, categories, { uploaded }, grants] = await Promise.all([
     getAdminTheme(themeId),
     listCategoryOptions(),
     searchParams,
+    canDownload ? listThemeCodeGrants(themeId) : Promise.resolve([]),
   ]);
   if (!theme) notFound();
 
+  const active = theme.versions.find((version) => version.id === theme.current_version_id);
+  const hasSource = Boolean(active && getTheme(active.component_id, active.component_version));
   const reviewSrc = theme.current_version_id ? `/preview/admin-themes/${theme.current_version_id}` : null;
 
   return (
@@ -122,6 +129,15 @@ export default async function ManageThemePage({
           <NewVersionForm themeId={theme.id} />
         </Card>
       </section>
+
+      {canDownload && (
+        <section className="space-y-3">
+          <h2 className="text-lg font-semibold">Source code</h2>
+          <Card className="p-5">
+            <ThemeCodeAccess themeId={theme.id} grants={grants} available={hasSource} />
+          </Card>
+        </section>
+      )}
 
       <section className="space-y-3">
         <h2 className="text-lg font-semibold">Details</h2>

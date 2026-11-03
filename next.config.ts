@@ -7,6 +7,10 @@ const BASE_HEADERS = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // The theme code download reads theme sources and images from disk at request time.
+  outputFileTracingIncludes: {
+    "/api/themes/[themeId]/code": ["./src/themes/**/*", "./src/app/globals.css", "./public/themes/**/*", "./package.json"],
+  },
   async headers() {
     return [
       // Theme previews are framed by the marketplace, and only by it.

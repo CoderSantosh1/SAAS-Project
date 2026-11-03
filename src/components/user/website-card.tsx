@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useState, useTransition } from "react";
 import { ConfirmAction } from "@/components/shared/confirm-action";
 import { ScaledFrame } from "@/components/shared/scaled-frame";
+import { buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { deleteWebsite, duplicateWebsite } from "@/features/websites/actions";
 import type { MyWebsite } from "@/features/websites/queries";
@@ -38,13 +39,21 @@ export function WebsiteCard({ website }: { website: MyWebsite }) {
   };
 
   return (
-    <Card className="flex flex-col overflow-hidden">
-      <ScaledFrame
-        src={`/preview/sites/${website.id}`}
-        title={`${website.name} preview`}
-        deviceWidth={1280}
-        className="aspect-[16/10] w-full border-b border-border"
-      />
+    <Card className="flex flex-col overflow-hidden transition hover:border-accent hover:shadow-card">
+      <Link href={`/editor/${website.id}`} className="group relative block border-b border-border" aria-label={`Edit ${website.name}`}>
+        <ScaledFrame
+          src={`/preview/sites/${website.id}`}
+          title={`${website.name} preview`}
+          deviceWidth={1280}
+          className="aspect-[16/10] w-full"
+        />
+        <span className="absolute inset-0 flex items-center justify-center bg-navy/0 opacity-0 transition group-hover:bg-navy/40 group-hover:opacity-100">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-4 py-2 text-sm font-semibold text-navy">
+            <Pencil className="size-4" aria-hidden />
+            Edit site
+          </span>
+        </span>
+      </Link>
       <div className="flex flex-1 flex-col p-5">
         <div className="flex items-start justify-between gap-3">
           <h2 className="min-w-0 text-lg font-semibold break-words">{website.name}</h2>
@@ -85,15 +94,17 @@ export function WebsiteCard({ website }: { website: MyWebsite }) {
           </p>
         )}
 
-        <div className="mt-4 flex flex-wrap gap-1 border-t border-border pt-3">
-          <Link href={`/editor/${website.id}`} className={ENABLED}>
+        <div className="mt-4 flex gap-2">
+          <Link href={`/editor/${website.id}`} className={cn(buttonVariants(), "h-9 flex-1 text-sm")}>
             <Pencil className="size-4" aria-hidden />
-            Edit
+            Edit site
           </Link>
-          <a href={`/preview/sites/${website.id}`} target="_blank" rel="noopener" className={ENABLED}>
+          <a href={`/preview/sites/${website.id}`} target="_blank" rel="noopener" className={cn(buttonVariants({ variant: "secondary" }), "h-9 text-sm")}>
             <Eye className="size-4" aria-hidden />
             Preview
           </a>
+        </div>
+        <div className="mt-3 flex flex-wrap gap-1 border-t border-border pt-3">
           <span aria-disabled="true" title="Publishing is coming soon" className={DISABLED}>
             <Rocket className="size-4" aria-hidden />
             Publish

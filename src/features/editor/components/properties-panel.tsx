@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowDown, ArrowUp, MousePointerClick, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { SectionDesign } from "@/themes/types";
@@ -22,7 +22,16 @@ function issueFor(issues: Record<string, string>, path: Path) {
   return issues[path.join(".")];
 }
 
-function Field({ field, base, context }: { field: EditorField; base: Path; context: FieldContext }) {
+// Each field is marked with its path, so a click on the canvas can scroll to it.
+function Field(props: { field: EditorField; base: Path; context: FieldContext }) {
+  return (
+    <div data-field-path={[...props.base, props.field.key].join(".")} className="rounded-md transition-shadow">
+      <FieldInput {...props} />
+    </div>
+  );
+}
+
+function FieldInput({ field, base, context }: { field: EditorField; base: Path; context: FieldContext }) {
   const path = [...base, field.key];
   const value = getPath(context.props, path);
   const text = typeof value === "string" ? value : "";
@@ -198,20 +207,48 @@ const SPACING: { value: NonNullable<SectionDesign["paddingY"]> | ""; label: stri
 export function PropertiesPanel({
   section,
   definition,
+  fieldFocus,
   onChange,
 }: {
   section: EditorSection | null;
   definition: SectionDefinition | null;
+  fieldFocus: { path: Path; focus: boolean; at: number } | null;
   onChange: (changes: Partial<EditorSection>, key: string) => void;
 }) {
   const [tab, setTab] = useState<"content" | "design">("content");
+  const body = useRef<HTMLDivElement>(null);
+  const focusAt = fieldFocus?.at;
+  const [handledFocus, setHandledFocus] = useState(focusAt);
+
+  // A click on text or a photo in the canvas brings its field into view. Text is being
+  // typed in the canvas, so only photos move keyboard focus here.
+  if (focusAt !== handledFocus) {
+    setHandledFocus(focusAt);
+    if (focusAt) setTab("content");
+  }
+
+  useEffect(() => {
+    if (!fieldFocus || !body.current) return;
+    const path = fieldFocus.path.join(".");
+    // The deepest field that holds the path: a list item's own field, not the whole list.
+    const target = [...body.current.querySelectorAll<HTMLElement>("[data-field-path]")]
+      .filter(({ dataset }) => path === dataset.fieldPath || path.startsWith(`${dataset.fieldPath}.`))
+      .at(-1);
+    if (!target) return;
+    target.scrollIntoView({ block: "center", behavior: "smooth" });
+    target.classList.add("ring-2", "ring-accent", "ring-offset-2");
+    if (fieldFocus.focus) target.querySelector<HTMLElement>("button, input, textarea, select")?.focus({ preventScroll: true });
+    const timer = window.setTimeout(() => target.classList.remove("ring-2", "ring-accent", "ring-offset-2"), 1600);
+    return () => window.clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- runs once per canvas click
+  }, [focusAt]);
 
   if (!section) {
     return (
       <div className="flex h-full flex-col items-center justify-center p-6 text-center">
         <MousePointerClick className="size-8 text-accent" aria-hidden />
         <p className="mt-3 text-sm font-medium">Select a section</p>
-        <p className="mt-1 text-xs text-secondary-text">Click any section in the preview to edit it here.</p>
+        <p className="mt-1 text-xs text-secondary-text">Click any text in the preview to change it right there, or click a section or photo to edit it here.</p>
       </div>
     );
   }
@@ -256,7 +293,7 @@ export function PropertiesPanel({
           ))}
         </div>
       </div>
-      <div className="flex-1 space-y-3 overflow-y-auto p-3">
+      <div ref={body} className="flex-1 space-y-3 overflow-y-auto p-3">
         {tab === "content" ? (
           <>
             {Object.keys(issues).length > 0 && (

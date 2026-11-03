@@ -1,3 +1,4 @@
 /* Styles that themes ship with. `pnpm theme:new` adds a line here for each new theme.
    Each theme's file must scope its rules to [data-theme="<component-id>"]. */
 @import "./implementations/lexora/styles.css";
+@import "./implementations/bloom/styles.css";

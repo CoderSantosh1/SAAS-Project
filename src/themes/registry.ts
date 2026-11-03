@@ -6,6 +6,8 @@ import { lexoraComponents } from "./implementations/lexora/components";
 import { lexoraDefinition } from "./implementations/lexora/definition";
 import { meridianComponents } from "./implementations/meridian/components";
 import { meridianDefinition } from "./implementations/meridian/definition";
+import { bloomComponents } from "./implementations/bloom/components";
+import { bloomDefinition } from "./implementations/bloom/definition";
 // theme:imports (pnpm theme:new adds imports above this line)
 import type { RegisteredTheme, SiteDocument, ThemeDefinition } from "./types";
 
@@ -16,6 +18,7 @@ const REGISTERED_THEMES: RegisteredTheme[] = [
   { definition: atelierDefinition, components: atelierComponents },
   { definition: hearthDefinition, components: hearthComponents },
   { definition: lexoraDefinition, components: lexoraComponents },
+  { definition: bloomDefinition, components: bloomComponents },
   // theme:entries (pnpm theme:new adds entries above this line)
 ];
 

@@ -1,0 +1,147 @@
+/* Bloom theme styles, scoped to the theme's root. The soft rose accents derive from the
+   site's primary color, so an owner's color choice recolors the whole theme. */
+
+[data-theme="bloom"] {
+  --bl-brand: color-mix(in srgb, var(--site-primary) 78%, white);
+  --bl-blush: color-mix(in srgb, var(--site-primary) 22%, white);
+  --bl-petal: color-mix(in srgb, var(--site-primary) 12%, white);
+  --bl-ink-shade: color-mix(in srgb, var(--site-text) 88%, var(--site-primary));
+}
+
+[data-theme="bloom"] .bl-shell {
+  margin-inline: auto;
+  width: 100%;
+  max-width: 1380px;
+  padding-inline: clamp(16px, 4vw, 32px);
+}
+
+/* Content is always visible: the entrance runs only where scroll-driven animation works. */
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    [data-theme="bloom"] .bl-reveal {
+      animation: bl-rise linear both;
+      animation-timeline: view();
+      animation-range: entry 0% cover 22%;
+    }
+  }
+
+  [data-theme="bloom"] .bl-float {
+    animation: bl-float 5s ease-in-out infinite;
+  }
+
+  [data-theme="bloom"] .bl-marquee {
+    animation: bl-marquee 38s linear infinite;
+  }
+
+  [data-theme="bloom"] .bl-marquee-slow {
+    animation: bl-marquee 60s linear infinite;
+  }
+
+  [data-theme="bloom"] .bl-marquee-reverse {
+    animation: bl-marquee 60s linear infinite reverse;
+  }
+
+  [data-theme="bloom"] .bl-marquee:hover,
+  [data-theme="bloom"] .bl-marquee-slow:hover,
+  [data-theme="bloom"] .bl-marquee-reverse:hover {
+    animation-play-state: paused;
+  }
+
+  [data-theme="bloom"] .bl-zoom-in {
+    animation: bl-zoom 1.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+}
+
+@keyframes bl-rise {
+  from {
+    opacity: 0;
+    translate: 0 40px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+@keyframes bl-float {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  50% {
+    translate: 0 -6px;
+  }
+}
+
+@keyframes bl-marquee {
+  to {
+    translate: -50% 0;
+  }
+}
+
+@keyframes bl-zoom {
+  from {
+    scale: 1.15;
+  }
+  to {
+    scale: 1;
+  }
+}
+
+/* Expandable treatment cards, done in CSS: the first card is open until another one is
+   hovered or focused. On narrow screens every card is open. */
+@media (min-width: 1024px) {
+  [data-theme="bloom"] .bl-cards {
+    display: flex;
+    height: 560px;
+    gap: 1rem;
+  }
+
+  [data-theme="bloom"] .bl-card {
+    flex: 1;
+    transition: flex 0.5s ease;
+  }
+
+  [data-theme="bloom"] .bl-cards:not(:hover, :focus-within) .bl-card:first-child,
+  [data-theme="bloom"] .bl-card:hover,
+  [data-theme="bloom"] .bl-card:focus-within {
+    flex: 4;
+  }
+
+  [data-theme="bloom"] .bl-card .bl-card-open {
+    opacity: 0;
+    transition: opacity 0.4s ease;
+  }
+
+  [data-theme="bloom"] .bl-card .bl-card-closed {
+    opacity: 1;
+    transition: opacity 0.3s ease;
+  }
+
+  [data-theme="bloom"] .bl-cards:not(:hover, :focus-within) .bl-card:first-child .bl-card-open,
+  [data-theme="bloom"] .bl-card:hover .bl-card-open,
+  [data-theme="bloom"] .bl-card:focus-within .bl-card-open {
+    opacity: 1;
+  }
+
+  [data-theme="bloom"] .bl-cards:not(:hover, :focus-within) .bl-card:first-child .bl-card-closed,
+  [data-theme="bloom"] .bl-card:hover .bl-card-closed,
+  [data-theme="bloom"] .bl-card:focus-within .bl-card-closed {
+    opacity: 0;
+  }
+}
+
+@media (max-width: 1023px) {
+  [data-theme="bloom"] .bl-cards {
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  [data-theme="bloom"] .bl-card {
+    min-height: 420px;
+  }
+
+  [data-theme="bloom"] .bl-card .bl-card-closed {
+    display: none;
+  }
+}

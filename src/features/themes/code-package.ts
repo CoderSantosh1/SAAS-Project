@@ -3,6 +3,8 @@ import "server-only";
 import { strToU8, zipSync, type Zippable } from "fflate";
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
+import { getCollectionProfile } from "@/themes/collection";
+import type { CollectionProfile } from "@/themes/collection/types";
 import { getTheme } from "@/themes/registry";
 import { getThemePreviewDocument } from "./preview";
 
@@ -42,10 +44,54 @@ function camel(id: string) {
   return id.replace(/-([a-z0-9])/g, (_, char: string) => char.toUpperCase());
 }
 
+// A collection theme has no folder of its own: it is a profile on top of a base design.
+// Its package gets the base design's folder, the collection builder and a generated folder
+// for the theme that turns the profile into a definition and components.
+function addCollectionTheme(files: Zippable, base: string, profile: CollectionProfile) {
+  const id = profile.slug;
+  const name = camel(id);
+  const collectionDir = join(ROOT, "src", "themes", "collection");
+  for (const file of ["types.ts", "colors.ts", "build.ts", `${profile.base}.ts`]) {
+    files[`${base}/src/themes/collection/${file}`] = readFileSync(join(collectionDir, file));
+  }
+  const target = `${base}/src/themes/implementations/${id}`;
+  text(
+    files,
+    `${target}/profile.ts`,
+    `import type { CollectionProfile } from "../../collection/types";
+
+// Everything that makes this theme its own: colors, fonts, wording and sample content.
+export const profile: CollectionProfile = ${JSON.stringify(profile, null, 2)};
+`,
+  );
+  text(
+    files,
+    `${target}/definition.ts`,
+    `import { buildDefinition } from "../../collection/build";
+import { profile } from "./profile";
+
+export const ${name}Definition = buildDefinition(profile);
+`,
+  );
+  const factory = profile.base === "crestview" ? "crestviewCollectionComponents" : "sproutsCollectionComponents";
+  text(
+    files,
+    `${target}/components.ts`,
+    `import { ${factory} } from "../../collection/${profile.base}";
+import { profile } from "./profile";
+
+export const ${name}Components = ${factory}(profile);
+`,
+  );
+}
+
 export function buildThemeCodePackage(download: CodeDownload) {
   const id = download.component_id;
-  if (!SAFE_ID.test(id) || !getTheme(id, download.component_version)) return null;
-  const themeDir = join(ROOT, "src", "themes", "implementations", id);
+  const theme = SAFE_ID.test(id) ? getTheme(id, download.component_version) : null;
+  if (!theme) return null;
+  const family = theme.components.family ?? id;
+  const profile = getCollectionProfile(id);
+  const themeDir = join(ROOT, "src", "themes", "implementations", family);
   if (!existsSync(themeDir)) return null;
 
   const loaded = getThemePreviewDocument({
@@ -65,7 +111,8 @@ export function buildThemeCodePackage(download: CodeDownload) {
     if (existsSync(source)) files[`${base}/${file}`] = readFileSync(source);
   }
   addTree(files, join(ROOT, "src", "themes", "shared"), `${base}/src/themes/shared`);
-  addTree(files, themeDir, `${base}/src/themes/implementations/${id}`);
+  addTree(files, themeDir, `${base}/src/themes/implementations/${family}`);
+  if (profile) addCollectionTheme(files, base, profile);
   addTree(files, join(ROOT, "public", "themes", id), `${base}/public/themes/${id}`);
   if (download.slug !== id && SAFE_ID.test(download.slug)) {
     addTree(files, join(ROOT, "public", "themes", download.slug), `${base}/public/themes/${download.slug}`);
@@ -92,7 +139,7 @@ export function listThemeDefinitions(): ThemeDefinition[] {
 `,
   );
   const hasStyles = existsSync(join(themeDir, "styles.css"));
-  text(files, `${base}/src/themes/styles.css`, hasStyles ? `@import "./implementations/${id}/styles.css";\n` : "/* This theme has no stylesheet of its own. */\n");
+  text(files, `${base}/src/themes/styles.css`, hasStyles ? `@import "./implementations/${family}/styles.css";\n` : "/* This theme has no stylesheet of its own. */\n");
 
   const globals = readFileSync(join(ROOT, "src", "app", "globals.css"), "utf8").replace('@import "../themes/styles.css";', '@import "../src/themes/styles.css";');
   text(files, `${base}/app/globals.css`, globals);
@@ -209,7 +256,12 @@ Then open http://localhost:3000.
 
 ## What is inside
 
-- \`src/themes/implementations/${id}/\`: the theme itself. \`definition.ts\` holds its colors, fonts and starter pages, \`components.ts\` maps each section type to a component, and \`custom-sections.tsx\` holds the sections only this theme offers.
+${
+  profile
+    ? `- \`src/themes/implementations/${id}/profile.ts\`: the theme itself. It holds the colors, fonts, wording and sample content, which \`src/themes/collection/build.ts\` turns into pages.
+- \`src/themes/implementations/${family}/\`: the base design this theme is built on, with its sections, header and footer.`
+    : `- \`src/themes/implementations/${id}/\`: the theme itself. \`definition.ts\` holds its colors, fonts and starter pages, \`components.ts\` maps each section type to a component, and \`custom-sections.tsx\` holds the sections only this theme offers.`
+}
 - \`src/themes/\`: the small runtime that renders a site document with a theme.
 - \`content/site.json\`: the pages, text and images. Change them here.
 - \`public/themes/\`: the theme's images.

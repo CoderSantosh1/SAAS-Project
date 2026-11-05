@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { iconLabel, INDUSTRY_ICONS } from "../../shared/icons";
 
 export const MUTED = "text-[var(--site-muted)]";
 export const LINE = "border-[var(--site-border)]";
@@ -32,11 +33,12 @@ const ICONS: Record<string, LucideIcon> = {
   award: Award,
   shield: ShieldCheck,
   landmark: Landmark,
+  ...INDUSTRY_ICONS,
 };
 
 export const ICON_IDS = Object.keys(ICONS) as [string, ...string[]];
 
-export const ICON_OPTIONS = [
+const SCHOOL_ICON_OPTIONS = [
   { value: "graduation-cap", label: "Graduation cap" },
   { value: "book", label: "Book" },
   { value: "flask", label: "Science" },
@@ -48,6 +50,11 @@ export const ICON_OPTIONS = [
   { value: "award", label: "Award" },
   { value: "shield", label: "Safety" },
   { value: "landmark", label: "Campus" },
+];
+
+export const ICON_OPTIONS = [
+  ...SCHOOL_ICON_OPTIONS,
+  ...Object.keys(INDUSTRY_ICONS).map((value) => ({ value, label: iconLabel(value) })),
 ];
 
 export function Icon({ name, size = 22, className }: { name: string; size?: number; className?: string }) {
@@ -62,6 +69,19 @@ export function Crest({ className = "" }: { className?: string }) {
       <path d="M20 6 33 10.5V21c0 7.8-5.3 13.4-13 16.8C12.3 34.4 7 28.8 7 21V10.5Z" fill="none" stroke="var(--cv-gold)" strokeWidth="1.5" />
       <path d="M12 17h16v2H12Zm2 4h12v8l-6 3-6-3Z" fill="var(--cv-gold)" />
     </svg>
+  );
+}
+
+// The logo mark: the shield crest, or an industry icon on an accent-ringed tile.
+export function Mark({ icon, className = "" }: { icon?: string; className?: string }) {
+  if (!icon) return <Crest className={className} />;
+  return (
+    <span
+      className={`inline-flex items-center justify-center rounded-[var(--site-radius)] bg-[var(--site-primary)] text-[var(--cv-gold)] shadow-[inset_0_0_0_1.5px_var(--cv-gold)] ${className}`}
+      aria-hidden
+    >
+      <Icon name={icon} size={20} />
+    </span>
   );
 }
 

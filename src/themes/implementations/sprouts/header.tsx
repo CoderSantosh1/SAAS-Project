@@ -1,14 +1,20 @@
 "use client";
 
 /* eslint-disable @next/next/no-img-element -- site images may come from any host */
-import { Menu, Sprout, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { ThemeComponents } from "../../types";
+import type { ComponentProps } from "react";
+import { findCtaLink } from "../../shared/links";
+import { SPROUTS_COPY, type SproutsCopy } from "./copy";
+import { Icon } from "./ui";
 
-export const SproutsHeader: ThemeComponents["Header"] = ({ siteName, logoUrl, homeHref, links }) => {
+type HeaderProps = ComponentProps<ThemeComponents["Header"]> & { copy?: SproutsCopy };
+
+export function SproutsHeader({ siteName, logoUrl, homeHref, links, copy = SPROUTS_COPY }: HeaderProps) {
   const [open, setOpen] = useState(false);
-  const contact = links.find((link) => /\/(contact|enroll|admissions)$/.test(link.href));
+  const contact = findCtaLink(links, copy.ctaPages);
 
   useEffect(() => {
     if (!open) return;
@@ -29,7 +35,7 @@ export const SproutsHeader: ThemeComponents["Header"] = ({ siteName, logoUrl, ho
             ) : (
               <>
                 <span className="flex size-10 shrink-0 -rotate-6 items-center justify-center rounded-2xl bg-[var(--sp-mint)] text-white">
-                  <Sprout size={22} strokeWidth={2.4} aria-hidden />
+                  <Icon name={copy.mark} size={22} />
                 </span>
                 <span className="truncate font-[family-name:var(--site-font-heading)] text-lg font-bold">{siteName}</span>
               </>
@@ -52,7 +58,7 @@ export const SproutsHeader: ThemeComponents["Header"] = ({ siteName, logoUrl, ho
           <div className="flex items-center gap-2">
             {contact && (
               <Link href={contact.href} className="hidden rounded-full bg-[var(--site-primary)] px-5 py-2.5 text-sm font-bold whitespace-nowrap text-[var(--site-on-primary)] transition hover:-translate-y-0.5 sm:inline-flex">
-                Enroll Now
+                {copy.headerCta}
               </Link>
             )}
             <button
@@ -78,4 +84,4 @@ export const SproutsHeader: ThemeComponents["Header"] = ({ siteName, logoUrl, ho
       )}
     </header>
   );
-};
+}

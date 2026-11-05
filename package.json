@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "themes:seed": "tsx scripts/generate-theme-seed.ts",
+    "themes:art": "tsx scripts/generate-collection-art.ts",
     "theme:new": "tsx scripts/theme-new.ts",
     "theme:check": "vitest run tests/themes"
   },

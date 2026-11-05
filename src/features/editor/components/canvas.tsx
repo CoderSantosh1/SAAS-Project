@@ -5,7 +5,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type MouseEvent } from "r
 import { createPortal } from "react-dom";
 import { applySiteDesign, resolveThemeTokens, safeLogoUrl } from "@/features/websites/document";
 import { getTheme } from "@/themes/registry";
-import { renderSectionContent, tokensToCssVariables } from "@/themes/renderer";
+import { renderSectionContent, themeRootProps } from "@/themes/renderer";
 import { getSectionDefinition } from "@/themes/sections";
 import type { RegisteredTheme } from "@/themes/types";
 import { editableTextNode, inlineTargets, type Path } from "../inline-edit";
@@ -255,8 +255,7 @@ export function Canvas({
       {root &&
         createPortal(
           <div
-            style={tokensToCssVariables(tokens)}
-            data-theme={theme.definition.componentId}
+            {...themeRootProps(theme, tokens)}
             className={`site-root flex min-h-dvh flex-col ${fontClassName}`}
             onClickCapture={stopLinks}
             onClick={() => onSelect(null)}

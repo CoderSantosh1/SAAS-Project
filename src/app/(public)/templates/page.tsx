@@ -1,22 +1,21 @@
-import { Search } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { z } from "zod";
 import { PageHeader, PUBLIC_CONTAINER } from "@/components/public/page-header";
+import { CategoryChips, paginate, Pagination, TemplateSearch } from "@/components/public/template-browse";
 import { ThemeGrid } from "@/components/public/theme-card";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { listCategories, listTemplates } from "@/features/marketplace/queries";
 
 export const metadata: Metadata = {
   title: "Templates",
-  description: "Browse professionally designed website templates.",
+  description: "Browse professionally designed website templates for every kind of business.",
 };
 
 const filtersSchema = z.object({
   q: z.string().trim().max(80).optional().catch(undefined),
   category: z.string().regex(/^[a-z0-9-]+$/).max(80).optional().catch(undefined),
+  page: z.coerce.number().int().min(1).max(100).optional().catch(undefined),
 });
 
 export default async function TemplatesPage({
@@ -24,47 +23,38 @@ export default async function TemplatesPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const { q, category } = filtersSchema.parse(await searchParams);
+  const { q, category, page } = filtersSchema.parse(await searchParams);
 
-  const [templates, categories] = await Promise.all([
+  const [templates, categories, all] = await Promise.all([
     listTemplates({ search: q, categorySlug: category }),
     listCategories(),
+    q || category ? listTemplates() : null,
   ]);
-  const options = categories.filter(
-    (option) => Number(option.template_count) > 0 || option.slug === category,
-  );
+  const current = paginate(templates, page ?? 1);
+  const selected = categories.find((option) => option.slug === category);
 
   return (
     <div className={`${PUBLIC_CONTAINER} py-14 sm:py-20`}>
-      <PageHeader title="Templates" description="Find a starting point for your website. You can change everything later." />
+      <PageHeader
+        title={selected ? `${selected.name} templates` : "Website templates"}
+        description="Pick a design made for your business. Change the text, images, colors and pages any time."
+      />
 
-      {/* A plain GET form, so filtering works without JavaScript and results can be linked to. */}
-      <form action="/templates" className="mt-8 flex flex-col gap-3 sm:flex-row">
-        <div className="relative flex-1">
-          <Search className="absolute top-3 left-3 size-4 text-muted-text" aria-hidden />
-          <Input name="q" type="search" defaultValue={q} placeholder="Search templates" aria-label="Search templates" className="pl-9" maxLength={80} />
-        </div>
-        <select
-          name="category"
-          defaultValue={category ?? ""}
-          aria-label="Category"
-          className="h-10 rounded-md border border-border bg-surface px-3 text-sm text-foreground"
-        >
-          <option value="">All categories</option>
-          {options.map((option) => (
-            <option key={option.id} value={option.slug}>
-              {option.name}
-            </option>
-          ))}
-        </select>
-        <Button type="submit" variant="secondary">
-          Apply
-        </Button>
-      </form>
+      <div className="mt-8 space-y-4">
+        <TemplateSearch basePath="/templates" q={q} category={category} />
+        <CategoryChips basePath="/templates" categories={categories} q={q} category={category} total={(all ?? templates).length} />
+      </div>
 
-      <div className="mt-8">
+      <div className="mt-8 space-y-8">
         {templates.length > 0 ? (
-          <ThemeGrid templates={templates} />
+          <>
+            <p className="text-sm text-secondary-text" aria-live="polite">
+              {templates.length} {templates.length === 1 ? "template" : "templates"}
+              {q && <> matching &ldquo;{q}&rdquo;</>}
+            </p>
+            <ThemeGrid templates={current.items} />
+            <Pagination basePath="/templates" filters={{ q, category }} page={current.page} pageCount={current.pageCount} />
+          </>
         ) : (
           <Card className="p-10 text-center">
             <h2 className="text-lg font-semibold">No templates found</h2>

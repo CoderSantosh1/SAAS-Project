@@ -193,6 +193,31 @@ export async function setThemeStatus(id: string, status: (typeof STATUSES)[numbe
   return {};
 }
 
+// Publishes several reviewed themes at once, such as a newly seeded collection. Each theme
+// goes through the same checks as a single publish; one failure does not stop the rest.
+export async function publishThemes(ids: string[]): Promise<ThemeActionResult> {
+  await requireAdmin("themes.manage");
+  const parsed = z.array(themeId).min(1).max(200).safeParse(ids);
+  if (!parsed.success) return { error: "Choose at least one theme to publish." };
+
+  const supabase = await createClient();
+  const errors: string[] = [];
+  let published = 0;
+  for (const id of new Set(parsed.data)) {
+    const { error } = await supabase.rpc("set_theme_status", { p_theme_id: id, p_status: "published" });
+    if (error) errors.push(friendlyError(error, "A theme could not be published."));
+    else published++;
+  }
+
+  if (published > 0) {
+    updateTag(PUBLIC_DATA_TAG);
+    revalidatePath("/admin/themes", "layout");
+  }
+  const message = `Published ${published} ${published === 1 ? "theme" : "themes"}.`;
+  if (errors.length === 0) return { message };
+  return { error: `${published > 0 ? `${message} ` : ""}${errors.length} could not be published: ${[...new Set(errors)].join(" ")}`, errors };
+}
+
 export async function activateVersion(id: string, versionId: string): Promise<ThemeActionResult> {
   await requireAdmin("themes.manage");
   if (!themeId.safeParse(id).success || !themeId.safeParse(versionId).success) return { error: "Please try again." };

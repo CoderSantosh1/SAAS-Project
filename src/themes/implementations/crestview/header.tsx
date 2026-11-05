@@ -5,11 +5,16 @@ import { Menu, Megaphone, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { ThemeComponents } from "../../types";
-import { Crest } from "./ui";
+import type { ComponentProps } from "react";
+import { findCtaLink } from "../../shared/links";
+import { CRESTVIEW_COPY, type CrestviewCopy } from "./copy";
+import { Mark } from "./ui";
 
-export const CrestviewHeader: ThemeComponents["Header"] = ({ siteName, logoUrl, homeHref, links }) => {
+type HeaderProps = ComponentProps<ThemeComponents["Header"]> & { copy?: CrestviewCopy };
+
+export function CrestviewHeader({ siteName, logoUrl, homeHref, links, copy = CRESTVIEW_COPY }: HeaderProps) {
   const [open, setOpen] = useState(false);
-  const contact = links.find((link) => /\/(contact|admissions)$/.test(link.href));
+  const contact = findCtaLink(links, copy.ctaPages);
 
   useEffect(() => {
     if (!open) return;
@@ -27,10 +32,10 @@ export const CrestviewHeader: ThemeComponents["Header"] = ({ siteName, logoUrl, 
           <div className="cv-shell flex h-10 items-center justify-center gap-2 text-xs sm:justify-between">
             <span className="flex items-center gap-2">
               <Megaphone size={14} className="text-[var(--cv-gold)]" aria-hidden />
-              Admissions are open for the new academic year
+              {copy.announcement}
             </span>
             <Link href={contact.href} className="hidden font-semibold text-[var(--cv-gold)] hover:underline sm:inline">
-              Apply now
+              {copy.barCta}
             </Link>
           </div>
         </div>
@@ -42,7 +47,7 @@ export const CrestviewHeader: ThemeComponents["Header"] = ({ siteName, logoUrl, 
               <img src={logoUrl} alt={siteName} className="h-12 w-auto max-w-44 object-contain" />
             ) : (
               <>
-                <Crest className="h-11 w-10 shrink-0" />
+                <Mark icon={copy.mark} className="h-11 w-10 shrink-0" />
                 <span className="truncate font-[family-name:var(--site-font-heading)] text-xl font-semibold">{siteName}</span>
               </>
             )}
@@ -59,7 +64,7 @@ export const CrestviewHeader: ThemeComponents["Header"] = ({ siteName, logoUrl, 
           <div className="flex items-center gap-2">
             {contact && (
               <Link href={contact.href} className="hidden rounded-[var(--site-radius)] bg-[var(--site-primary)] px-5 py-3 text-sm font-semibold whitespace-nowrap text-[var(--site-on-primary)] transition hover:bg-[var(--cv-deep)] sm:inline-flex">
-                Apply Now
+                {copy.headerCta}
               </Link>
             )}
             <button
@@ -86,4 +91,4 @@ export const CrestviewHeader: ThemeComponents["Header"] = ({ siteName, logoUrl, 
       </div>
     </header>
   );
-};
+}

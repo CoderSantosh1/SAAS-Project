@@ -41,6 +41,15 @@ export function tokensToCssVariables(tokens: DesignTokens) {
   } as CSSProperties;
 }
 
+// The attributes and style every site root carries, shared by the renderer and the editor.
+export function themeRootProps(theme: RegisteredTheme, tokens: DesignTokens) {
+  return {
+    style: { ...theme.components.rootVariables, ...tokensToCssVariables(tokens) } as CSSProperties,
+    "data-theme": theme.definition.componentId,
+    "data-theme-family": theme.components.family ?? theme.definition.componentId,
+  };
+}
+
 export function parseSiteDocument(value: unknown): SiteDocument | null {
   const result = siteDocumentSchema.safeParse(value);
   return result.success ? result.data : null;
@@ -134,8 +143,7 @@ export function SiteRenderer({
 
   return (
     <div
-      style={tokensToCssVariables(document.tokens)}
-      data-theme={theme.definition.componentId}
+      {...themeRootProps(theme, document.tokens)}
       className={`site-root flex min-h-dvh flex-col ${className ?? ""}`}
     >
       <Header siteName={document.siteName} logoUrl={document.logoUrl} homeHref={homeHref} links={links} />

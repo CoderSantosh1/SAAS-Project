@@ -6,6 +6,34 @@ After a theme is live, admins can upload data-only variants of it (new colors, f
 
 Lexora (`src/themes/implementations/lexora`) is the complete reference theme. It has its own header, footer, versions of every built-in section, and eight sections of its own.
 
+## The theme collection
+
+`src/themes/collection` holds 50 ready-made themes, one for each marketplace category (restaurant, salon, law firm, gym and so on). They are not separate codebases. Each one is a profile (colors, fonts, logo icon, header wording and sample content) built on one of two base designs:
+
+| Base design | Feel | Used for |
+|---|---|---|
+| Crestview | Classic: serif headings, announcement bar, deep color with an accent | Professional services, healthcare, property, hotels |
+| Little Sprouts | Playful: rounded cards, pill header, five decoration colors | Cafes, fitness, creative studios, shops, events |
+
+A collection theme renders with `data-theme="<its id>"` and `data-theme-family="<base design>"`, so it shares the base design's stylesheet. Its accent colors reach the page through `rootVariables`, and its wording through the base design's copy (`crestview/copy.ts`, `sprouts/copy.ts`).
+
+To add one:
+
+1. Add a profile to a file in `src/themes/collection/profiles/`. `pnpm theme:check` tells you if any text is too long, a link is broken or a color fails contrast. Colors are darkened automatically until text passes WCAG AA.
+2. Generate its artwork. Images are flat illustrations in the theme's colors, written to `public/themes/<slug>/`:
+
+   ```bash
+   pnpm themes:art
+   ```
+
+3. Seed it. A new migration with only the new slug keeps existing rows untouched:
+
+   ```bash
+   pnpm themes:seed 20261201000020_seed_my_theme --only my-theme
+   ```
+
+4. Publish it at `/admin/themes`. New themes arrive as Under review, and the page has a button to publish every theme under review at once.
+
 ## Quick start
 
 ```bash

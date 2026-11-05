@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { ConfirmAction } from "@/components/shared/confirm-action";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { activateVersion, deleteTheme, duplicateTheme, setThemeStatus, type ThemeActionResult } from "../actions";
+import { activateVersion, deleteTheme, duplicateTheme, publishThemes, setThemeStatus, type ThemeActionResult } from "../actions";
 import type { AdminTheme, AdminThemeVersion } from "../queries";
 
 const PRIMARY = buttonVariants({ size: "md" });
@@ -107,5 +107,35 @@ export function ActivateVersionButton({ themeId, version }: { themeId: string; v
       confirmVariant="primary"
       action={() => activateVersion(themeId, version.id)}
     />
+  );
+}
+
+// Publishes every theme in `ids` in one step, for a batch that has been reviewed together.
+export function BulkPublishButton({ ids }: { ids: string[] }) {
+  const [message, setMessage] = useState<string>();
+  if (ids.length === 0) return null;
+  const count = `${ids.length} ${ids.length === 1 ? "theme" : "themes"}`;
+
+  return (
+    <div className="flex flex-wrap items-center gap-3">
+      <ConfirmAction
+        triggerClassName={PRIMARY}
+        trigger={`Publish ${count} under review`}
+        title={`Publish ${count}?`}
+        description="They will appear in the public marketplace, and anyone will be able to build a website with them. Preview each theme first if you have not reviewed it."
+        confirmLabel={`Publish ${count}`}
+        confirmVariant="primary"
+        action={async () => {
+          const result = await publishThemes(ids);
+          setMessage(result.error ? undefined : result.message);
+          return result;
+        }}
+      />
+      {message && (
+        <p role="status" className="text-sm font-medium text-success">
+          {message}
+        </p>
+      )}
+    </div>
   );
 }

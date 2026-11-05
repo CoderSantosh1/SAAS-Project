@@ -251,6 +251,13 @@ export type ThemeComponents = {
     links: { label: string; href: string }[];
   }>;
   Footer: ComponentType<{ siteName: string; links?: { label: string; href: string }[] }>;
+  // The stylesheet family this theme uses. Themes built on another theme's components
+  // (the collection themes) share its CSS, which is scoped to [data-theme-family="<family>"].
+  // Defaults to the theme's own component id.
+  family?: string;
+  // Extra CSS variables set on the site root, such as a family's accent colors. Set in
+  // code only, never from stored content.
+  rootVariables?: Record<`--${string}`, string>;
 };
 
 export type RegisteredTheme = {

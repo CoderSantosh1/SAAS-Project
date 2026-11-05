@@ -1,12 +1,10 @@
-import { Search } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { z } from "zod";
+import { CategoryChips, paginate, Pagination, TemplateSearch } from "@/components/public/template-browse";
 import { ThemeGrid } from "@/components/public/theme-card";
 import { PageTitle } from "@/components/user/page-title";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { listCategories, listTemplates, type MarketplaceTemplate } from "@/features/marketplace/queries";
 import { listPopularThemeSlugs } from "@/features/websites/queries";
 import { requireUser } from "@/lib/auth/session";
@@ -16,6 +14,7 @@ export const metadata: Metadata = { title: "Templates" };
 const filtersSchema = z.object({
   q: z.string().trim().max(80).optional().catch(undefined),
   category: z.string().regex(/^[a-z0-9-]+$/).max(80).optional().catch(undefined),
+  page: z.coerce.number().int().min(1).max(100).optional().catch(undefined),
 });
 
 const useTemplateHref = (template: MarketplaceTemplate) =>
@@ -27,73 +26,63 @@ export default async function DashboardTemplatesPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   await requireUser();
-  const { q, category } = filtersSchema.parse(await searchParams);
+  const { q, category, page } = filtersSchema.parse(await searchParams);
   const filtering = Boolean(q || category);
+  // Popular and featured rows show only on the first, unfiltered page.
+  const showHighlights = !filtering && (page ?? 1) === 1;
 
-  const [templates, categories, popularSlugs] = await Promise.all([
+  const [templates, categories, popularSlugs, all] = await Promise.all([
     listTemplates({ search: q, categorySlug: category }),
     listCategories(),
-    filtering ? Promise.resolve([]) : listPopularThemeSlugs(),
+    showHighlights ? listPopularThemeSlugs() : Promise.resolve([]),
+    filtering ? listTemplates() : null,
   ]);
 
-  const options = categories.filter(
-    (option) => Number(option.template_count) > 0 || option.slug === category,
-  );
-  const featured = filtering ? [] : templates.filter((template) => template.is_featured);
+  const featured = showHighlights ? templates.filter((template) => template.is_featured).slice(0, 6) : [];
   const popular = popularSlugs.flatMap((slug) => templates.filter((template) => template.theme_slug === slug));
+  const current = paginate(templates, page ?? 1);
 
   return (
     <div className="mx-auto max-w-6xl space-y-8">
-      <PageTitle title="Templates" description="Pick a design and start building." />
+      <PageTitle title="Templates" description="Pick a design made for your business and start building. You can change everything later." />
 
-      <form action="/dashboard/templates" className="flex flex-col gap-3 sm:flex-row">
-        <div className="relative flex-1">
-          <Search className="absolute top-3 left-3 size-4 text-muted-text" aria-hidden />
-          <Input name="q" type="search" defaultValue={q} placeholder="Search templates" aria-label="Search templates" className="pl-9" maxLength={80} />
-        </div>
-        <select
-          name="category"
-          defaultValue={category ?? ""}
-          aria-label="Category"
-          className="h-10 rounded-md border border-border bg-surface px-3 text-sm text-foreground"
-        >
-          <option value="">All categories</option>
-          {options.map((option) => (
-            <option key={option.id} value={option.slug}>
-              {option.name}
-            </option>
-          ))}
-        </select>
-        <Button type="submit" variant="secondary">
-          Apply
-        </Button>
-      </form>
+      <div className="space-y-4">
+        <TemplateSearch basePath="/dashboard/templates" q={q} category={category} />
+        <CategoryChips basePath="/dashboard/templates" categories={categories} q={q} category={category} total={(all ?? templates).length} />
+      </div>
 
       {popular.length > 0 && (
         <section>
           <h2 className="mb-4 text-xl font-semibold">Popular</h2>
-          <ThemeGrid templates={popular} hrefFor={useTemplateHref} />
+          <ThemeGrid templates={popular} hrefFor={useTemplateHref} cta="Use this template" withPreviewLink />
         </section>
       )}
 
       {featured.length > 0 && (
         <section>
           <h2 className="mb-4 text-xl font-semibold">Featured</h2>
-          <ThemeGrid templates={featured} hrefFor={useTemplateHref} />
+          <ThemeGrid templates={featured} hrefFor={useTemplateHref} cta="Use this template" withPreviewLink />
         </section>
       )}
 
       {templates.length === 0 ? (
         <Card className="p-10 text-center">
           <h2 className="text-lg font-semibold">No templates found</h2>
+          <p className="mt-1 text-sm text-secondary-text">Try a different search or category.</p>
           <Link href="/dashboard/templates" className="mt-3 inline-block text-sm font-semibold text-primary hover:text-primary-hover">
             Clear filters
           </Link>
         </Card>
       ) : (
-        <section>
-          {!filtering && <h2 className="mb-4 text-xl font-semibold">All templates</h2>}
-          <ThemeGrid templates={templates} hrefFor={useTemplateHref} />
+        <section className="space-y-6">
+          <div className="flex items-baseline justify-between gap-3">
+            <h2 className="text-xl font-semibold">{filtering ? "Results" : "All templates"}</h2>
+            <p className="text-sm text-secondary-text" aria-live="polite">
+              {templates.length} {templates.length === 1 ? "template" : "templates"}
+            </p>
+          </div>
+          <ThemeGrid templates={current.items} hrefFor={useTemplateHref} cta="Use this template" withPreviewLink />
+          <Pagination basePath="/dashboard/templates" filters={{ q, category }} page={current.page} pageCount={current.pageCount} />
         </section>
       )}
     </div>

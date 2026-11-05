@@ -2,7 +2,11 @@ import { Clock, Mail, MapPin, Phone, Quote } from "lucide-react";
 import Link from "next/link";
 import { CountUp } from "../../shared/count-up";
 import type { SectionComponentProps, ThemeComponents } from "../../types";
-import { ActionLink, Crest, LINE, MUTED, Photo, SectionHeading } from "./ui";
+import type { ComponentProps } from "react";
+import { CRESTVIEW_COPY, type CrestviewCopy } from "./copy";
+import { ActionLink, Crest, LINE, Mark, MUTED, Photo, SectionHeading } from "./ui";
+
+type WithCopy = { copy?: CrestviewCopy };
 
 // Crestview's versions of the built-in section types. The rest use the shared building
 // blocks, recolored by the theme's tokens.
@@ -44,12 +48,12 @@ export function Stats({ props }: SectionComponentProps<"stats">) {
   );
 }
 
-export function Testimonials({ props }: SectionComponentProps<"testimonials">) {
+export function Testimonials({ props, copy = CRESTVIEW_COPY }: SectionComponentProps<"testimonials"> & WithCopy) {
   const [first, ...rest] = props.items;
   return (
     <section className="bg-[var(--cv-tint)] py-20 lg:py-28">
       <div className="cv-shell">
-        {props.heading && <SectionHeading eyebrow="Voices" title={props.heading} center />}
+        {props.heading && <SectionHeading eyebrow={copy.testimonialsEyebrow} title={props.heading} center />}
         <div className="mt-12 grid gap-6 lg:grid-cols-[1.4fr_1fr]">
           {first && (
             <figure className="cv-reveal relative rounded-[var(--site-radius)] bg-[var(--site-primary)] p-8 text-[var(--site-on-primary)] sm:p-12">
@@ -78,11 +82,11 @@ export function Testimonials({ props }: SectionComponentProps<"testimonials">) {
   );
 }
 
-export function Gallery({ props }: SectionComponentProps<"gallery">) {
+export function Gallery({ props, copy = CRESTVIEW_COPY }: SectionComponentProps<"gallery"> & WithCopy) {
   return (
     <section className="bg-[var(--site-background)] py-20 lg:py-28">
       <div className="cv-shell">
-        {props.heading && <SectionHeading eyebrow="Campus life" title={props.heading} center />}
+        {props.heading && <SectionHeading eyebrow={copy.galleryEyebrow} title={props.heading} center />}
         <div className="mt-12 grid auto-rows-[200px] grid-cols-2 gap-3 sm:auto-rows-[240px] lg:grid-cols-4">
           {props.images.map((image, index) => (
             <figure key={`${image.src}-${index}`} className={`cv-reveal group relative overflow-hidden rounded-[var(--site-radius)] ${index % 5 === 0 ? "col-span-2 row-span-2" : ""}`}>
@@ -120,19 +124,20 @@ export function Cta({ props, resolveHref }: SectionComponentProps<"cta">) {
 }
 
 // Contact details only. An enquiry form needs a backend and comes later.
-export function Contact({ props }: SectionComponentProps<"contact">) {
+export function Contact({ props, copy = CRESTVIEW_COPY }: SectionComponentProps<"contact"> & WithCopy) {
+  const labels = copy.contactLabels;
   const details = [
-    props.phone && { icon: Phone, label: "Phone", value: props.phone, href: `tel:${props.phone.replace(/[^+\d]/g, "")}` },
-    props.email && { icon: Mail, label: "Email", value: props.email, href: `mailto:${props.email}` },
-    props.address && { icon: MapPin, label: "Campus", value: props.address },
-    props.hours && { icon: Clock, label: "Office hours", value: props.hours },
+    props.phone && { icon: Phone, label: labels.phone, value: props.phone, href: `tel:${props.phone.replace(/[^+\d]/g, "")}` },
+    props.email && { icon: Mail, label: labels.email, value: props.email, href: `mailto:${props.email}` },
+    props.address && { icon: MapPin, label: labels.address, value: props.address },
+    props.hours && { icon: Clock, label: labels.hours, value: props.hours },
   ].filter(Boolean) as { icon: typeof Phone; label: string; value: string; href?: string }[];
 
   return (
     <section className="bg-[var(--site-background)] py-20 lg:py-28">
       <div className="cv-shell grid gap-12 lg:grid-cols-[1fr_1.2fr]">
         <div>
-          <SectionHeading eyebrow="Get in touch" title={props.heading} text={props.body} />
+          <SectionHeading eyebrow={copy.contactEyebrow} title={props.heading} text={props.body} />
         </div>
         <ul className="grid gap-4 sm:grid-cols-2">
           {details.map(({ icon: Icon, label, value, href }) => {
@@ -154,18 +159,18 @@ export function Contact({ props }: SectionComponentProps<"contact">) {
   );
 }
 
-export const Footer: ThemeComponents["Footer"] = ({ siteName, links = [] }) => (
+export const Footer = ({ siteName, links = [], copy = CRESTVIEW_COPY }: ComponentProps<ThemeComponents["Footer"]> & WithCopy) => (
   <footer className="bg-[var(--cv-deep)] text-white">
     <div className="cv-shell grid gap-10 py-16 md:grid-cols-[1.3fr_1fr]">
       <div>
         <Link href={links[0]?.href ?? "/"} className="inline-flex items-center gap-3">
-          <Crest className="h-12 w-11" />
+          <Mark icon={copy.mark} className="h-12 w-11" />
           <span className="font-[family-name:var(--site-font-heading)] text-2xl font-semibold">{siteName}</span>
         </Link>
-        <p className="mt-4 max-w-sm text-sm leading-7 text-white/70">Inspiring curious minds and confident leaders, one class at a time.</p>
+        <p className="mt-4 max-w-sm text-sm leading-7 text-white/70">{copy.footerTagline}</p>
       </div>
       <nav aria-label="Footer">
-        <p className="text-xs font-semibold tracking-[0.2em] text-[var(--cv-gold)] uppercase">Explore</p>
+        <p className="text-xs font-semibold tracking-[0.2em] text-[var(--cv-gold)] uppercase">{copy.footerHeading}</p>
         <ul className="mt-4 grid grid-cols-2 gap-3">
           {links.map((link) => (
             <li key={link.href}>

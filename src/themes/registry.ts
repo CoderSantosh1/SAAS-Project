@@ -12,6 +12,7 @@ import { crestviewComponents } from "./implementations/crestview/components";
 import { crestviewDefinition } from "./implementations/crestview/definition";
 import { sproutsComponents } from "./implementations/sprouts/components";
 import { sproutsDefinition } from "./implementations/sprouts/definition";
+import { COLLECTION_THEMES } from "./collection";
 // theme:imports (pnpm theme:new adds imports above this line)
 import type { RegisteredTheme, SiteDocument, ThemeDefinition } from "./types";
 
@@ -26,6 +27,8 @@ const REGISTERED_THEMES: RegisteredTheme[] = [
   { definition: crestviewDefinition, components: crestviewComponents },
   { definition: sproutsDefinition, components: sproutsComponents },
   // theme:entries (pnpm theme:new adds entries above this line)
+  // One theme per marketplace category, built on the Crestview and Sprouts designs.
+  ...COLLECTION_THEMES,
 ];
 
 export function getTheme(componentId: string, version: string) {

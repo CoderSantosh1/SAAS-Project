@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { z } from "zod";
 import { CategoryGrid } from "@/components/public/category-grid";
+import { paginate, Pagination } from "@/components/public/template-browse";
 import { ThemeGrid } from "@/components/public/theme-card";
 import { ThemePreview } from "@/components/public/theme-preview";
 import { PageTitle } from "@/components/user/page-title";
@@ -23,6 +24,7 @@ const paramsSchema = z.object({
   category: slugParam,
   theme: slugParam,
   step: z.enum(["details"]).optional().catch(undefined),
+  page: z.coerce.number().int().min(1).max(100).optional().catch(undefined),
 });
 
 function StepIndicator({ current }: { current: number }) {
@@ -77,7 +79,7 @@ export default async function CreateWebsitePage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   await requireUser();
-  const { category, theme: themeSlug, step } = paramsSchema.parse(await searchParams);
+  const { category, theme: themeSlug, step, page } = paramsSchema.parse(await searchParams);
 
   if (!themeSlug && !category) {
     const categories = await listCategories();
@@ -99,16 +101,26 @@ export default async function CreateWebsitePage({
 
   if (!themeSlug) {
     const templates = await listTemplates({ categorySlug: category === "all" ? undefined : category });
+    const current = paginate(templates, page ?? 1);
     return (
       <div className="mx-auto max-w-5xl space-y-6">
         <StepIndicator current={1} />
         <BackLink href={withParams({})} label="Change category" />
         <PageTitle title="Choose a template" description="Pick the design closest to what you have in mind." />
         {templates.length > 0 ? (
-          <ThemeGrid
-            templates={templates}
-            hrefFor={(template) => withParams({ category, theme: template.theme_slug })}
-          />
+          <>
+            <ThemeGrid
+              templates={current.items}
+              hrefFor={(template) => withParams({ category, theme: template.theme_slug })}
+              cta="Preview and choose"
+            />
+            <Pagination
+              basePath="/dashboard/create-website"
+              filters={{ category }}
+              page={current.page}
+              pageCount={current.pageCount}
+            />
+          </>
         ) : (
           <Card className="p-10 text-center text-sm text-secondary-text">
             There are no templates in this category yet.

@@ -1,14 +1,14 @@
 /* Crestview theme styles, scoped to the theme's root. Tints derive from the site's
    primary color; the gold is a fixed accent that suits any primary. */
 
-[data-theme="crestview"] {
+[data-theme-family="crestview"] {
   --cv-gold: #c9a23f;
   --cv-deep: color-mix(in srgb, var(--site-primary) 82%, black);
   --cv-tint: color-mix(in srgb, var(--site-primary) 8%, white);
   --cv-line: color-mix(in srgb, var(--site-primary) 18%, white);
 }
 
-[data-theme="crestview"] .cv-shell {
+[data-theme-family="crestview"] .cv-shell {
   margin-inline: auto;
   width: 100%;
   max-width: 1240px;
@@ -18,14 +18,14 @@
 /* Content is always visible: the entrance runs only where scroll-driven animation works. */
 @media (prefers-reduced-motion: no-preference) {
   @supports (animation-timeline: view()) {
-    [data-theme="crestview"] .cv-reveal {
+    [data-theme-family="crestview"] .cv-reveal {
       animation: cv-rise linear both;
       animation-timeline: view();
       animation-range: entry 0% cover 20%;
     }
   }
 
-  [data-theme="crestview"] .cv-hero-photo {
+  [data-theme-family="crestview"] .cv-hero-photo {
     animation: cv-settle 1.8s cubic-bezier(0.22, 1, 0.36, 1) both;
   }
 }
@@ -51,7 +51,7 @@
 }
 
 /* A thin gold rule under section labels. */
-[data-theme="crestview"] .cv-label::after {
+[data-theme-family="crestview"] .cv-label::after {
   content: "";
   display: block;
   width: 2.5rem;
@@ -60,18 +60,18 @@
   background: var(--cv-gold);
 }
 
-[data-theme="crestview"] .cv-label-center::after {
+[data-theme-family="crestview"] .cv-label-center::after {
   margin-inline: auto;
 }
 
-[data-theme="crestview"] details.cv-faq > summary {
+[data-theme-family="crestview"] details.cv-faq > summary {
   list-style: none;
 }
 
-[data-theme="crestview"] details.cv-faq > summary::-webkit-details-marker {
+[data-theme-family="crestview"] details.cv-faq > summary::-webkit-details-marker {
   display: none;
 }
 
-[data-theme="crestview"] details.cv-faq[open] .cv-faq-icon {
+[data-theme-family="crestview"] details.cv-faq[open] .cv-faq-icon {
   rotate: 45deg;
 }

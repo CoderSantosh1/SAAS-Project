@@ -1,8 +1,12 @@
-import { Clock, Mail, MapPin, Phone, Sprout, Star } from "lucide-react";
+import { Clock, Mail, MapPin, Phone, Star } from "lucide-react";
 import Link from "next/link";
 import { CountUp } from "../../shared/count-up";
 import type { SectionComponentProps, ThemeComponents } from "../../types";
-import { Bubble, COLORS, colorAt, Doodle, MUTED, Photo, SectionHeading, Wave } from "./ui";
+import type { ComponentProps } from "react";
+import { SPROUTS_COPY, type SproutsCopy } from "./copy";
+import { Bubble, COLORS, colorAt, Doodle, Icon, MUTED, Photo, SectionHeading, Wave } from "./ui";
+
+type WithCopy = { copy?: SproutsCopy };
 
 // Little Sprouts' versions of the built-in section types.
 
@@ -51,13 +55,13 @@ export function Stats({ props }: SectionComponentProps<"stats">) {
   );
 }
 
-export function Testimonials({ props }: SectionComponentProps<"testimonials">) {
+export function Testimonials({ props, copy = SPROUTS_COPY }: SectionComponentProps<"testimonials"> & WithCopy) {
   return (
     <section className="bg-[var(--site-background)]">
       <Wave fill="var(--sp-cream)" />
       <div className="bg-[var(--sp-cream)] py-16 lg:py-24">
         <div className="sp-shell">
-          {props.heading && <SectionHeading eyebrow="Happy parents" title={props.heading} />}
+          {props.heading && <SectionHeading eyebrow={copy.testimonialsEyebrow} title={props.heading} />}
           <div className="mt-12 grid gap-6 md:grid-cols-3">
             {props.items.map((item, index) => {
               const color = COLORS[colorAt(index + 1)];
@@ -92,11 +96,11 @@ export function Testimonials({ props }: SectionComponentProps<"testimonials">) {
   );
 }
 
-export function Gallery({ props }: SectionComponentProps<"gallery">) {
+export function Gallery({ props, copy = SPROUTS_COPY }: SectionComponentProps<"gallery"> & WithCopy) {
   return (
     <section className="overflow-hidden bg-[var(--site-background)] py-20 lg:py-28">
       <div className="sp-shell">
-        {props.heading && <SectionHeading eyebrow="Our photo wall" title={props.heading} />}
+        {props.heading && <SectionHeading eyebrow={copy.galleryEyebrow} title={props.heading} />}
         <div className="mt-14 grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-4">
           {props.images.map((image, index) => (
             <figure
@@ -136,18 +140,19 @@ export function Cta({ props, resolveHref }: SectionComponentProps<"cta">) {
 }
 
 // Contact details only. A booking form needs a backend and comes later.
-export function Contact({ props }: SectionComponentProps<"contact">) {
+export function Contact({ props, copy = SPROUTS_COPY }: SectionComponentProps<"contact"> & WithCopy) {
+  const labels = copy.contactLabels;
   const details = [
-    props.phone && { icon: Phone, label: "Call us", value: props.phone, href: `tel:${props.phone.replace(/[^+\d]/g, "")}` },
-    props.email && { icon: Mail, label: "Email us", value: props.email, href: `mailto:${props.email}` },
-    props.address && { icon: MapPin, label: "Visit us", value: props.address },
-    props.hours && { icon: Clock, label: "School hours", value: props.hours },
+    props.phone && { icon: Phone, label: labels.phone, value: props.phone, href: `tel:${props.phone.replace(/[^+\d]/g, "")}` },
+    props.email && { icon: Mail, label: labels.email, value: props.email, href: `mailto:${props.email}` },
+    props.address && { icon: MapPin, label: labels.address, value: props.address },
+    props.hours && { icon: Clock, label: labels.hours, value: props.hours },
   ].filter(Boolean) as { icon: typeof Phone; label: string; value: string; href?: string }[];
 
   return (
     <section className="bg-[var(--site-background)] py-20 lg:py-28">
       <div className="sp-shell">
-        <SectionHeading eyebrow="Say hello" title={props.heading} text={props.body} />
+        <SectionHeading eyebrow={copy.contactEyebrow} title={props.heading} text={props.body} />
         <ul className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {details.map(({ icon: Icon, label, value, href }, index) => {
             const color = COLORS[colorAt(index)];
@@ -173,7 +178,7 @@ export function Contact({ props }: SectionComponentProps<"contact">) {
   );
 }
 
-export const Footer: ThemeComponents["Footer"] = ({ siteName, links = [] }) => (
+export const Footer = ({ siteName, links = [], copy = SPROUTS_COPY }: ComponentProps<ThemeComponents["Footer"]> & WithCopy) => (
   <footer className="mt-10 bg-[var(--site-background)]">
     <Wave fill="var(--site-text)" />
     <div className="bg-[var(--site-text)] pb-8 text-white">
@@ -181,11 +186,11 @@ export const Footer: ThemeComponents["Footer"] = ({ siteName, links = [] }) => (
         <div>
           <Link href={links[0]?.href ?? "/"} className="inline-flex items-center gap-2.5">
             <span className="flex size-11 -rotate-6 items-center justify-center rounded-2xl bg-[var(--sp-mint)]">
-              <Sprout size={24} strokeWidth={2.4} aria-hidden />
+              <Icon name={copy.mark} size={24} />
             </span>
             <span className="font-[family-name:var(--site-font-heading)] text-xl font-bold">{siteName}</span>
           </Link>
-          <p className="mt-4 max-w-xs text-sm leading-7 text-white/70">A happy, safe place to play, learn and grow.</p>
+          <p className="mt-4 max-w-xs text-sm leading-7 text-white/70">{copy.footerTagline}</p>
         </div>
         <nav aria-label="Footer" className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {links.map((link) => (
@@ -196,7 +201,7 @@ export const Footer: ThemeComponents["Footer"] = ({ siteName, links = [] }) => (
         </nav>
       </div>
       <p className="sp-shell mt-10 border-t border-white/10 pt-6 text-xs text-white/60">
-        &copy; {new Date().getFullYear()} {siteName}. Made with love for little learners.
+        &copy; {new Date().getFullYear()} {siteName}. {copy.footerNote}
       </p>
     </div>
   </footer>

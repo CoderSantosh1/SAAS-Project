@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { iconLabel, INDUSTRY_ICONS } from "../../shared/icons";
 
 export const MUTED = "text-[var(--site-muted)]";
 
@@ -56,10 +57,11 @@ const ICONS: Record<string, LucideIcon> = {
   brush: Brush,
   smile: Smile,
   star: Star,
+  ...INDUSTRY_ICONS,
 };
 
 export const ICON_IDS = Object.keys(ICONS) as [string, ...string[]];
-export const ICON_OPTIONS = ICON_IDS.map((value) => ({ value, label: value[0]!.toUpperCase() + value.slice(1) }));
+export const ICON_OPTIONS = ICON_IDS.map((value) => ({ value, label: iconLabel(value) }));
 
 export function Icon({ name, size = 24, className }: { name: string; size?: number; className?: string }) {
   const Component = ICONS[name] ?? Sprout;

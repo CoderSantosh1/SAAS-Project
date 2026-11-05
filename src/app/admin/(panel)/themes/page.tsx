@@ -1,13 +1,15 @@
-import { Palette, Plus, Search } from "lucide-react";
+import { ExternalLink, Palette, Plus, Search } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { z } from "zod";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { BulkPublishButton } from "@/features/themes/components/theme-actions";
 import { ThemeStatusBadge } from "@/features/themes/components/theme-status-badge";
 import { listAdminThemes } from "@/features/themes/queries";
 import { requireAdmin } from "@/lib/auth/session";
+import { getThemeDefinitionBySlug } from "@/themes/registry";
 
 export const metadata: Metadata = { title: "Themes" };
 
@@ -22,6 +24,7 @@ const STATUS_OPTIONS = [
 const filtersSchema = z.object({
   q: z.string().trim().max(80).optional().catch(undefined),
   status: z.enum(["draft", "under_review", "published", "unpublished", "archived"]).optional().catch(undefined),
+  category: z.string().trim().max(80).optional().catch(undefined),
 });
 
 export default async function AdminThemesPage({
@@ -30,25 +33,30 @@ export default async function AdminThemesPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   await requireAdmin("themes.manage");
-  const { q, status } = filtersSchema.parse(await searchParams);
+  const { q, status, category } = filtersSchema.parse(await searchParams);
   const themes = await listAdminThemes();
 
   const count = (match: (theme: (typeof themes)[number]) => boolean) => themes.filter(match).length;
+  // Each count links to the list filtered by that status.
   const stats = [
-    { label: "Total themes", value: themes.length },
-    { label: "Published", value: count((theme) => theme.status === "published") },
-    { label: "Draft", value: count((theme) => theme.status === "draft") },
-    { label: "Unpublished", value: count((theme) => theme.status === "unpublished") },
-    { label: "Featured", value: count((theme) => theme.is_featured) },
-    { label: "Under review", value: count((theme) => theme.status === "under_review") },
+    { label: "Total themes", value: themes.length, href: "/admin/themes" },
+    { label: "Published", value: count((theme) => theme.status === "published"), href: "/admin/themes?status=published" },
+    { label: "Under review", value: count((theme) => theme.status === "under_review"), href: "/admin/themes?status=under_review" },
+    { label: "Draft", value: count((theme) => theme.status === "draft"), href: "/admin/themes?status=draft" },
+    { label: "Unpublished", value: count((theme) => theme.status === "unpublished"), href: "/admin/themes?status=unpublished" },
+    { label: "Featured", value: count((theme) => theme.is_featured), href: undefined },
   ];
+  const categories = [...new Set(themes.map((theme) => theme.category_name).filter(Boolean) as string[])].sort();
 
   const search = q?.toLowerCase();
   const visible = themes.filter(
     (theme) =>
       (!status || theme.status === status) &&
+      (!category || theme.category_name === category) &&
       (!search || theme.name.toLowerCase().includes(search) || theme.slug.includes(search)),
   );
+  // Bulk publishing acts on what the admin is looking at, so a filter narrows it.
+  const reviewIds = visible.filter((theme) => theme.status === "under_review").map((theme) => theme.id);
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
@@ -64,13 +72,34 @@ export default async function AdminThemesPage({
       </div>
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6">
-        {stats.map((stat) => (
-          <Card key={stat.label} className="px-4 py-3">
-            <p className="text-xs font-medium text-secondary-text">{stat.label}</p>
-            <p className="mt-0.5 font-heading text-xl font-semibold text-navy">{stat.value}</p>
-          </Card>
-        ))}
+        {stats.map((stat) => {
+          const content = (
+            <>
+              <p className="text-xs font-medium text-secondary-text">{stat.label}</p>
+              <p className="mt-0.5 font-heading text-xl font-semibold text-navy">{stat.value}</p>
+            </>
+          );
+          return stat.href ? (
+            <Link key={stat.label} href={stat.href} className="rounded-lg focus-visible:outline-2 focus-visible:outline-primary">
+              <Card className="h-full px-4 py-3 transition-colors hover:border-primary/40 hover:bg-primary-light/40">{content}</Card>
+            </Link>
+          ) : (
+            <Card key={stat.label} className="px-4 py-3">
+              {content}
+            </Card>
+          );
+        })}
       </div>
+
+      {reviewIds.length > 0 && (
+        <Card className="flex flex-col gap-3 border-primary/30 bg-primary-light/40 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="font-semibold text-foreground">Themes waiting for review</p>
+            <p className="text-sm text-secondary-text">Preview them below, then publish them to the marketplace together.</p>
+          </div>
+          <BulkPublishButton ids={reviewIds} />
+        </Card>
+      )}
 
       <form action="/admin/themes" className="flex flex-col gap-2 sm:flex-row">
         <div className="relative flex-1">
@@ -85,10 +114,27 @@ export default async function AdminThemesPage({
             </option>
           ))}
         </select>
+        <select name="category" defaultValue={category ?? ""} aria-label="Category" className="h-10 rounded-md border border-border bg-surface px-3 text-sm">
+          <option value="">All categories</option>
+          {categories.map((name) => (
+            <option key={name} value={name}>
+              {name}
+            </option>
+          ))}
+        </select>
         <Button type="submit" variant="secondary">
           Apply
         </Button>
+        {(q || status || category) && (
+          <Link href="/admin/themes" className={buttonVariants({ variant: "ghost" })}>
+            Clear
+          </Link>
+        )}
       </form>
+
+      <p className="text-sm text-secondary-text" aria-live="polite">
+        Showing {visible.length} of {themes.length} themes
+      </p>
 
       <Card className="relative overflow-x-auto">
         <table className="w-full min-w-[760px] text-left text-sm">
@@ -132,7 +178,20 @@ export default async function AdminThemesPage({
                 <td className="px-4 py-3 whitespace-nowrap text-secondary-text">
                   {new Date(theme.updated_at).toLocaleDateString("en-IN", { dateStyle: "medium" })}
                 </td>
-                <td className="px-4 py-3 text-right">
+                <td className="px-4 py-3 text-right whitespace-nowrap">
+                  {/* The public preview shows code themes and published uploads. */}
+                  {(getThemeDefinitionBySlug(theme.slug) || theme.status === "published") && (
+                  <a
+                    href={`/preview/themes/${theme.slug}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mr-4 inline-flex items-center gap-1 text-secondary-text hover:text-primary-hover"
+                  >
+                    Preview
+                    <ExternalLink className="size-3.5" aria-hidden />
+                    <span className="sr-only">{theme.name} (opens in a new tab)</span>
+                  </a>
+                  )}
                   <Link href={`/admin/themes/${theme.id}`} className="font-semibold text-primary-hover hover:underline">
                     Manage
                   </Link>

@@ -1,6 +1,6 @@
 import { strFromU8, unzipSync } from "fflate";
 import { describe, expect, it, vi } from "vitest";
-import { listThemeDefinitions } from "@/themes/registry";
+import { getTheme, listThemeDefinitions } from "@/themes/registry";
 
 vi.mock("server-only", () => ({}));
 
@@ -25,8 +25,19 @@ describe("theme code package", () => {
         expect(files, path).toHaveProperty([`${base}/${path}`]);
       }
       expect(Object.keys(files).some((path) => path.startsWith(`${base}/src/themes/implementations/${definition.componentId}/`))).toBe(true);
-      // Only this theme's source, not the others.
-      expect(Object.keys(files).filter((path) => path.includes("/implementations/")).every((path) => path.includes(`/implementations/${definition.componentId}/`))).toBe(true);
+      // Only this theme's source and the base design it is built on, not the others.
+      const family = getTheme(definition.componentId, definition.version)!.components.family ?? definition.componentId;
+      const allowed = [`/implementations/${definition.componentId}/`, `/implementations/${family}/`];
+      expect(Object.keys(files).filter((path) => path.includes("/implementations/")).every((path) => allowed.some((dir) => path.includes(dir)))).toBe(true);
+      expect(Object.keys(files).some((path) => path.startsWith(`${base}/public/themes/${definition.slug}/`))).toBe(true);
+      if (family !== definition.componentId) {
+        // A collection theme ships its profile and the builder, and imports only its base design.
+        expect(files).toHaveProperty([`${base}/src/themes/implementations/${definition.componentId}/profile.ts`]);
+        expect(files).toHaveProperty([`${base}/src/themes/collection/build.ts`]);
+        expect(strFromU8(files[`${base}/src/themes/styles.css`]!)).toContain(`implementations/${family}/styles.css`);
+        const other = family === "crestview" ? "sprouts" : "crestview";
+        expect(Object.keys(files).some((path) => path.includes(`/collection/${other}.ts`))).toBe(false);
+      }
 
       const site = JSON.parse(strFromU8(files[`${base}/content/site.json`]!)) as { themeId: string; pages: unknown[] };
       expect(site.themeId).toBe(definition.componentId);

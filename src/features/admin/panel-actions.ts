@@ -59,6 +59,16 @@ export async function setUserStatus(id: string, status: "active" | "suspended", 
   return result.error ? result : { message: status === "suspended" ? "Account suspended." : "Account restored." };
 }
 
+// Moves a user to a plan, for example after they request one and pay offline.
+export async function setUserPlan(id: string, _: FormResult, form: FormData) {
+  if (!uuid.safeParse(id).success) return { error: "User not found." };
+  const plan = slug.safeParse(field(form, "plan"));
+  const months = z.coerce.number().int().min(1).max(36).safeParse(field(form, "months") || "1");
+  if (!plan.success || !months.success) return { error: "Choose a plan and a period of 1 to 36 months." };
+  const { result } = await run("plans.manage", "admin_set_user_plan", { p_user_id: id, p_plan_slug: plan.data, p_months: months.data }, ["/admin/users"], "We could not change this plan.");
+  return result.error ? result : { message: "Plan updated. Any open plan request was marked resolved." };
+}
+
 export async function setUserRoles(id: string, _: FormResult, form: FormData) {
   const { access } = await requireAdmin("users.view");
   if (!access.isSuper) return { error: "Only a Super Admin can assign roles." };

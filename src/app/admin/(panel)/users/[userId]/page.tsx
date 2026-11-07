@@ -2,11 +2,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { z } from "zod";
-import { AdminForm, CheckField, TextareaField } from "@/components/admin/admin-form";
+import { AdminForm, CheckField, Field, SelectField, TextareaField } from "@/components/admin/admin-form";
 import { AdminPage, DataTable, formatDate, StatusBadge, Td } from "@/components/admin/admin-ui";
 import { Card } from "@/components/ui/card";
-import { setUserRoles, setUserStatus } from "@/features/admin/panel-actions";
-import { getUser } from "@/features/admin/panel-queries";
+import { setUserPlan, setUserRoles, setUserStatus } from "@/features/admin/panel-actions";
+import { getUser, getUserPlan } from "@/features/admin/panel-queries";
+import { formatRupees } from "@/features/billing/format";
 import { requireAdmin } from "@/lib/auth/session";
 import { can } from "@/lib/permissions";
 
@@ -24,7 +25,7 @@ export default async function AdminUserPage({ params }: { params: Promise<{ user
   const { userId } = await params;
   if (!z.uuid().safeParse(userId).success) notFound();
 
-  const user = await getUser(userId);
+  const [user, plan] = await Promise.all([getUser(userId), can(access, "plans.manage") ? getUserPlan(userId) : null]);
   if (!user) notFound();
 
   const suspended = user.account_status === "suspended";
@@ -53,6 +54,34 @@ export default async function AdminUserPage({ params }: { params: Promise<{ user
               <TextareaField label="Reason (recorded in the activity log)" name="reason" maxLength={500} />
             </AdminForm>
           )}
+        </Card>
+      )}
+
+      {plan && (
+        <Card className="p-5">
+          <h2 className="font-semibold">Plan</h2>
+          <p className="mt-1 mb-4 text-sm text-secondary-text">
+            {plan.current ? (
+              <>
+                On <span className="font-medium text-foreground">{plan.current.name}</span>
+                {plan.current.current_period_end && <> until {formatDate(plan.current.current_period_end)}</>}.
+              </>
+            ) : (
+              <>On the Free plan.</>
+            )}{" "}
+            Assigning a plan also resolves the user&apos;s open plan request.
+          </p>
+          <AdminForm action={setUserPlan.bind(null, user.id)} submitLabel="Assign plan" submitVariant="secondary">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <SelectField
+                label="Plan"
+                name="plan"
+                defaultValue={plan.current?.slug ?? "free"}
+                options={plan.plans.map((option) => ({ value: option.slug, label: `${option.name} (${formatRupees(option.monthly_price_paise)})` }))}
+              />
+              <Field label="Months" name="months" type="number" min={1} max={36} defaultValue={1} hint="Ignored for the Free plan." />
+            </div>
+          </AdminForm>
         </Card>
       )}
 

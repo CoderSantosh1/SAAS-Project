@@ -1,5 +1,6 @@
 import { Mail, Phone } from "lucide-react";
 import type { Metadata } from "next";
+import Link from "next/link";
 import { PageHeader, PUBLIC_CONTAINER } from "@/components/public/page-header";
 import { Card } from "@/components/ui/card";
 import { getPlatformSettings } from "@/features/settings/queries";
@@ -27,7 +28,13 @@ export default async function ContactPage() {
           </a>
         )}
         {!contactEmail && !contactPhone && (
-          <p className="text-sm text-secondary-text">Our contact details will be available here soon.</p>
+          <p className="text-sm text-secondary-text">
+            The quickest way to reach us is a support request.{" "}
+            <Link href="/dashboard/support" className="font-semibold text-primary hover:text-primary-hover">
+              Sign in and send a request
+            </Link>
+            , and we will reply within one working day.
+          </p>
         )}
       </Card>
     </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { Copy, Eye, Pencil, Rocket, Settings, Trash2 } from "lucide-react";
+import { Copy, Eye, Pencil, Settings, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import { ConfirmAction } from "@/components/shared/confirm-action";
@@ -8,6 +8,7 @@ import { ScaledFrame } from "@/components/shared/scaled-frame";
 import { buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { deleteWebsite, duplicateWebsite } from "@/features/websites/actions";
+import { PublishControls } from "@/features/websites/components/publish-controls";
 import type { MyWebsite } from "@/features/websites/queries";
 import { cn } from "@/lib/utils";
 
@@ -20,7 +21,6 @@ const STATUS_STYLES: Record<string, string> = {
 
 const ACTION = "inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm font-medium";
 const ENABLED = `${ACTION} text-foreground transition-colors hover:bg-background`;
-const DISABLED = `${ACTION} cursor-not-allowed text-muted-text`;
 
 export function WebsiteCard({ website }: { website: MyWebsite }) {
   const [pending, startTransition] = useTransition();
@@ -106,10 +106,7 @@ export function WebsiteCard({ website }: { website: MyWebsite }) {
           </a>
         </div>
         <div className="mt-3 flex flex-wrap gap-1 border-t border-border pt-3">
-          <span aria-disabled="true" title="Publishing is coming soon" className={DISABLED}>
-            <Rocket className="size-4" aria-hidden />
-            Publish
-          </span>
+          <PublishControls website={website} />
           <Link href={`/dashboard/websites/${website.id}/settings`} className={ENABLED}>
             <Settings className="size-4" aria-hidden />
             Settings

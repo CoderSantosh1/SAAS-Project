@@ -209,3 +209,32 @@ export const listTickets = (status?: string, search?: string, offset = 0) =>
   call<Paged<AdminTicket>>("admin_list_tickets", { p_status: status ?? null, p_search: search ?? null, p_offset: offset });
 export const listActivity = (search?: string, offset = 0, limit = 50) =>
   call<Paged<ActivityRow>>("admin_list_activity", { p_search: search ?? null, p_offset: offset, p_limit: limit });
+
+export type AdminUserPlan = {
+  plans: { slug: string; name: string; monthly_price_paise: number }[];
+  current: { slug: string; name: string; current_period_end: string | null } | null;
+};
+
+// A user's active plan and the plans an admin can assign. Needs plans.manage, which
+// RLS checks for both tables.
+export async function getUserPlan(userId: string): Promise<AdminUserPlan> {
+  const supabase = await createClient();
+  const [plans, subscription] = await Promise.all([
+    supabase.from("plans").select("slug, name, monthly_price_paise").order("display_order"),
+    supabase
+      .from("subscriptions")
+      .select("current_period_end, plans(slug, name)")
+      .eq("user_id", userId)
+      .eq("status", "active")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+  ]);
+  if (plans.error) throw new Error(`Could not load plans: ${plans.error.message}`);
+  if (subscription.error) throw new Error(`Could not load subscription: ${subscription.error.message}`);
+  const row = subscription.data as { current_period_end: string | null; plans: { slug: string; name: string } | null } | null;
+  return {
+    plans: plans.data ?? [],
+    current: row?.plans ? { ...row.plans, current_period_end: row.current_period_end } : null,
+  };
+}

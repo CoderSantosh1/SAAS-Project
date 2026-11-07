@@ -26,6 +26,8 @@ import { useCallback, useEffect, useReducer, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { brand } from "@/config/brand";
 import { resolveThemeTokens } from "@/features/websites/document";
+import { publishWebsite } from "@/features/websites/publish-actions";
+import { liveSitePath } from "@/features/websites/urls";
 import { getTheme } from "@/themes/registry";
 import { getSectionDefinition } from "@/themes/sections";
 import { createHistory, historyReducer, setPath, updateSection } from "../state";
@@ -111,6 +113,32 @@ export function Editor({ data, fontClassName }: { data: EditorData; fontClassNam
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [save]);
+
+  // Publishing works from the saved draft, so pending edits are saved first.
+  const [publishing, setPublishing] = useState(false);
+  const [live, setLive] = useState(data.status === "published");
+  const [publishNotice, setPublishNotice] = useState<{ tone: "success" | "error"; text: string }>();
+  const publish = async () => {
+    setPublishing(true);
+    setPublishNotice(undefined);
+    try {
+      if (!(await save())) {
+        setPublishNotice({ tone: "error", text: "Save your changes before publishing." });
+        return;
+      }
+      const result = await publishWebsite(data.id);
+      if (result.error) {
+        setPublishNotice({ tone: "error", text: result.error });
+      } else {
+        setLive(true);
+        setPublishNotice({ tone: "success", text: result.message ?? "Your website is live." });
+      }
+    } catch {
+      setPublishNotice({ tone: "error", text: "We could not reach the server. Please try again." });
+    } finally {
+      setPublishing(false);
+    }
+  };
 
   const openPreview = async () => {
     // Opened first, because browsers block pop-ups that follow an awaited call.
@@ -215,13 +243,35 @@ export function Editor({ data, fontClassName }: { data: EditorData; fontClassNam
             <ExternalLink className="size-4" aria-hidden />
             Preview
           </Button>
-          <Button type="button" className="h-9 px-3 text-sm" disabled title="Publishing is coming soon">
+          <Button
+            type="button"
+            className="h-9 px-3 text-sm"
+            disabled={blocked || publishing || data.status === "suspended"}
+            title={data.status === "suspended" ? "This website is suspended" : live ? "Publish your latest changes" : "Put your website live"}
+            onClick={() => void publish()}
+          >
             <Rocket className="size-4" aria-hidden />
-            Publish
+            {publishing ? "Publishing..." : live ? "Update live" : "Publish"}
           </Button>
         </div>
       </header>
 
+      {publishNotice && (
+        <p
+          role={publishNotice.tone === "error" ? "alert" : "status"}
+          className={`flex flex-wrap items-center gap-2 px-4 py-2 text-sm ${publishNotice.tone === "error" ? "bg-danger/10 text-red-800" : "bg-success/10 text-green-800"}`}
+        >
+          {publishNotice.text}
+          {publishNotice.tone === "success" && (
+            <a href={liveSitePath(data.slug)} target="_blank" rel="noopener" className="font-semibold underline">
+              View live site
+            </a>
+          )}
+          <button type="button" className="ml-auto text-xs font-semibold" onClick={() => setPublishNotice(undefined)}>
+            Dismiss
+          </button>
+        </p>
+      )}
       {saveState === "conflict" && (
         <p role="alert" className="flex flex-wrap items-center gap-2 bg-danger/10 px-4 py-2 text-sm text-red-800">
           This website was changed in another tab or device, so your latest edits were not saved.

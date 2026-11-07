@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { customDomainPath, isPlatformRequest } from "@/features/domains/hostnames";
 import { classifyRoute } from "@/lib/auth/routes";
 import { getSupabaseEnv, isSupabaseConfigured } from "@/lib/supabase/env";
 
@@ -29,6 +30,18 @@ export async function proxy(request: NextRequest) {
       },
     },
   });
+
+  // A visitor on a verified custom domain sees that website's live site. Only the
+  // website itself is served there: dashboard and admin paths stay on the platform.
+  const host = request.headers.get("host");
+  if (!isPlatformRequest(host)) {
+    const { data: slug } = await supabase.rpc("get_site_slug_by_domain", { p_hostname: host!.replace(/:\d+$/, "") });
+    if (typeof slug === "string" && slug) {
+      const target = request.nextUrl.clone();
+      target.pathname = customDomainPath(slug, request.nextUrl.pathname);
+      return NextResponse.rewrite(target);
+    }
+  }
 
   const {
     data: { user },

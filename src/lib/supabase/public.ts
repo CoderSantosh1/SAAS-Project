@@ -19,3 +19,12 @@ export function createPublicClient() {
     },
   });
 }
+
+// For public writes such as counting a page view. Never cached, carries no session.
+export function createUncachedPublicClient() {
+  const { url, anonKey } = getSupabaseEnv();
+  return createClient(url, anonKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+    global: { fetch: (input, init) => fetch(input, { ...init, cache: "no-store" }) },
+  });
+}

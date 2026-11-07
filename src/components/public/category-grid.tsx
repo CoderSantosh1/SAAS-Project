@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { PublicCategory } from "@/features/marketplace/queries";
 
 export function templateCountLabel(count: number) {
-  if (count === 0) return "Coming soon";
+  if (count === 0) return "No templates yet";
   return count === 1 ? "1 template" : `${count} templates`;
 }
 

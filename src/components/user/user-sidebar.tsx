@@ -33,9 +33,9 @@ export const USER_NAV: ShellNavGroup[] = [
   {
     label: "Grow",
     items: [
-      { label: "Domains", href: "/dashboard/domains", icon: Link2, soon: true },
-      { label: "Analytics", href: "/dashboard/analytics", icon: BarChart3, soon: true },
-      { label: "Billing", href: "/dashboard/billing", icon: CreditCard, soon: true },
+      { label: "Domains", href: "/dashboard/domains", icon: Link2 },
+      { label: "Analytics", href: "/dashboard/analytics", icon: BarChart3 },
+      { label: "Billing", href: "/dashboard/billing", icon: CreditCard },
     ],
   },
   {

@@ -18,7 +18,9 @@ describe("active navigation item", () => {
     expect(activeNavItem(USER_NAV, "/dashboard")?.label).toBe("Overview");
     expect(activeNavItem(USER_NAV, "/dashboard/websites")?.label).toBe("My Websites");
     expect(activeNavItem(USER_NAV, "/dashboard/websites/123/settings")?.label).toBe("My Websites");
-    expect(activeNavItem(USER_NAV, "/dashboard/domains")?.label).toBe("Overview");
+    expect(activeNavItem(USER_NAV, "/dashboard/domains")?.label).toBe("Domains");
+    const withSoon = [{ items: [{ label: "Home", href: "/x", icon: Globe }, { label: "Later", href: "/x/later", icon: Globe, soon: true }] }];
+    expect(activeNavItem(withSoon, "/x/later")?.label).toBe("Home");
     expect(activeNavItem(USER_NAV, "/dashboard-other")).toBeNull();
   });
 });
@@ -55,7 +57,7 @@ describe("admin navigation", () => {
       const dir = join(process.cwd(), "src", "app", "admin", "(panel)", ...href.split("/").slice(2));
       expect(existsSync(join(dir, "page.tsx")), href).toBe(true);
     }
-    for (const item of USER_NAV.flatMap((group) => group.items).filter((item) => !item.soon)) {
+    for (const item of USER_NAV.flatMap((group) => group.items)) {
       expect(existsSync(join(process.cwd(), "src", "app", ...item.href.split("/").slice(1), "page.tsx")), item.href).toBe(true);
     }
   });
@@ -79,11 +81,18 @@ describe("app shell", () => {
     expect(html).toContain("New website");
   });
 
-  it("shows coming-soon items as disabled, not as links", () => {
+  it("has no coming-soon items left in the user menu", () => {
+    expect(USER_NAV.flatMap((group) => group.items).filter((item) => item.soon)).toEqual([]);
     const html = renderToStaticMarkup(withChildren(UserShell, { brandName: "WEB", footer: null }, null));
-    expect(html).not.toContain('href="/dashboard/billing"');
+    for (const href of ["/dashboard/domains", "/dashboard/analytics", "/dashboard/billing"]) expect(html).toContain(`href="${href}"`);
+    expect(html).not.toContain(">Soon<");
+  });
+
+  it("still shows a coming-soon item as disabled, not as a link", () => {
+    const groups = [{ items: [{ label: "Home", href: "/x", icon: Globe }, { label: "Later", href: "/x/later", icon: Globe, soon: true }] }];
+    const html = renderToStaticMarkup(withChildren(AppShell, { tone: "light" as const, label: "Area", brand: "Brand", groups, footer: null }, null));
+    expect(html).not.toContain('href="/x/later"');
     expect(html).toContain('aria-disabled="true"');
-    expect(html).toContain("Soon");
   });
 
   it("renders the admin shell with its dark sidebar, filtered by permission", () => {

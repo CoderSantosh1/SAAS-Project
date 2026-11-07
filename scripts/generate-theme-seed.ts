@@ -7,7 +7,7 @@
 // version to the registry and generate a new migration containing only that theme.
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { COLLECTION_PROFILES } from "../src/themes/collection";
+import { CATEGORY_PROFILES, INDIA_PROFILES } from "../src/themes/collection/profiles";
 import { getTheme, listThemeDefinitions } from "../src/themes/registry";
 import { buildSectionRows } from "../src/themes/section-rows";
 import type { ThemeDefinition } from "../src/themes/types";
@@ -63,20 +63,23 @@ const option = (flag: string) => {
   const index = rest.indexOf(flag);
   return index === -1 ? undefined : rest[index + 1];
 };
-// --only takes one slug or a comma-separated list; --collection selects every collection theme.
+// --only takes one slug or a comma-separated list. --group selects a whole collection:
+// "categories" (one theme per original category) or "india".
 const only = option("--only")?.split(",");
-const collection = rest.includes("--collection");
+const GROUPS = { categories: CATEGORY_PROFILES, india: INDIA_PROFILES };
+const groupName = option("--group") as keyof typeof GROUPS | undefined;
+const group = groupName ? GROUPS[groupName] : undefined;
 const status = (option("--status") ?? "under_review") as (typeof STATUSES)[number];
 
-if (!name || !/^\d{14}_[a-z0-9_]+$/.test(name) || (!only && !collection) || !STATUSES.includes(status)) {
-  console.error("Usage: pnpm themes:seed <timestamp_name> (--only <slug>[,<slug>...] | --collection) [--status draft|under_review|published]");
+if (!name || !/^\d{14}_[a-z0-9_]+$/.test(name) || (!only && !group) || (groupName && !group) || !STATUSES.includes(status)) {
+  console.error("Usage: pnpm themes:seed <timestamp_name> (--only <slug>[,<slug>...] | --group categories|india) [--status draft|under_review|published]");
   console.error("Example: pnpm themes:seed 20261103000013_seed_lexora --only lexora");
   process.exit(1);
 }
 
-const collectionSlugs = new Set(COLLECTION_PROFILES.map((profile) => profile.slug));
+const groupSlugs = new Set((group ?? []).map((profile) => profile.slug));
 const definitions = listThemeDefinitions().filter((definition) =>
-  collection ? collectionSlugs.has(definition.slug) : only!.includes(definition.slug),
+  group ? groupSlugs.has(definition.slug) : only!.includes(definition.slug),
 );
 const missing = (only ?? []).filter((slug) => !definitions.some((definition) => definition.slug === slug));
 if (definitions.length === 0 || missing.length > 0) {

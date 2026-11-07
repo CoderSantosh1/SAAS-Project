@@ -39,7 +39,7 @@ export function WebsiteCard({ website }: { website: MyWebsite }) {
   };
 
   return (
-    <Card className="flex flex-col overflow-hidden transition hover:border-accent hover:shadow-card">
+    <Card className="flex flex-col overflow-hidden transition hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-elevated">
       <Link href={`/editor/${website.id}`} className="group relative block border-b border-border" aria-label={`Edit ${website.name}`}>
         <ScaledFrame
           src={`/preview/sites/${website.id}`}
@@ -59,10 +59,11 @@ export function WebsiteCard({ website }: { website: MyWebsite }) {
           <h2 className="min-w-0 text-lg font-semibold break-words">{website.name}</h2>
           <span
             className={cn(
-              "shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize",
+              "inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold capitalize",
               STATUS_STYLES[website.status],
             )}
           >
+            <span className="size-1.5 rounded-full bg-current opacity-70" aria-hidden />
             {website.status}
           </span>
         </div>

@@ -1,3 +1,4 @@
+import { FilePen, Globe, HardDrive, Rocket, UserCheck, Users, UserX } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { AdminPage, StatRow } from "@/components/admin/admin-ui";
@@ -64,14 +65,14 @@ export default async function AdminAnalyticsPage({ searchParams }: { searchParam
       }
     >
       <StatRow stats={[
-        { label: "Registered users", value: data.totals.users },
-        { label: "Active accounts", value: data.totals.active_users },
-        { label: "Users with a website", value: data.totals.users_with_website },
-        { label: "Suspended", value: data.totals.suspended_users },
-        { label: "Total websites", value: data.totals.websites },
-        { label: "Published", value: data.totals.published },
-        { label: "Drafts", value: data.totals.drafts },
-        { label: "Storage used", value: formatBytes(Number(data.totals.storage_bytes)) },
+        { label: "Registered users", icon: Users, value: data.totals.users },
+        { label: "Active accounts", icon: UserCheck, value: data.totals.active_users },
+        { label: "Users with a website", icon: Globe, value: data.totals.users_with_website },
+        { label: "Suspended", icon: UserX, value: data.totals.suspended_users },
+        { label: "Total websites", icon: Globe, value: data.totals.websites },
+        { label: "Published", icon: Rocket, value: data.totals.published },
+        { label: "Drafts", icon: FilePen, value: data.totals.drafts },
+        { label: "Storage used", icon: HardDrive, value: formatBytes(Number(data.totals.storage_bytes)) },
       ]} />
 
       <div className="grid gap-4 lg:grid-cols-3">

@@ -7,6 +7,7 @@ import { collectionArt } from "@/themes/collection/art";
 import { ART_FILES } from "@/themes/collection/build";
 import { contrast, deriveTokens, mix } from "@/themes/collection/colors";
 import { COLLECTION_PROFILES, COLLECTION_THEMES } from "@/themes/collection";
+import { CATEGORY_PROFILES, INDIA_PROFILES } from "@/themes/collection/profiles";
 import { CRESTVIEW_COPY } from "@/themes/implementations/crestview/copy";
 import { SPROUTS_COPY } from "@/themes/implementations/sprouts/copy";
 import { createStarterDocument, getTheme, listThemeDefinitions } from "@/themes/registry";
@@ -26,7 +27,10 @@ const CATEGORY_NAMES = [
   "Gym", "Yoga", "Automobile", "Car Rental", "News", "Magazine", "Blog", "Entertainment",
   "Salon", "Spa", "Personal Branding", "Consulting",
 ];
-const CATEGORY_SLUGS = CATEGORY_NAMES.map((name) => name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""));
+const ORIGINAL_SLUGS = CATEGORY_NAMES.map((name) => name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""));
+// Added for the India collection (supabase/migrations/..._india_categories.sql).
+const INDIA_CATEGORY_SLUGS = ["training-institute", "chartered-accountant", "sweet-shop", "jewellery", "temple"];
+const CATEGORY_SLUGS = [...ORIGINAL_SLUGS, ...INDIA_CATEGORY_SLUGS];
 
 // Wording that belongs to the school themes and must not leak into other industries.
 const SCHOOL_WORDS = [
@@ -45,10 +49,28 @@ function renderHome(slug: string) {
 }
 
 describe("theme collection", () => {
-  it("has at least 50 themes, one for every marketplace category", () => {
-    expect(COLLECTION_THEMES.length).toBeGreaterThanOrEqual(50);
-    const primary = COLLECTION_PROFILES.map((profile) => profile.category);
-    expect([...primary].sort()).toEqual([...CATEGORY_SLUGS].sort());
+  it("has one theme for each original category", () => {
+    expect(CATEGORY_PROFILES.map((profile) => profile.category).sort()).toEqual([...ORIGINAL_SLUGS].sort());
+  });
+
+  it("has at least 30 India themes, covering schools, coaching, training and media", () => {
+    expect(INDIA_PROFILES.length).toBeGreaterThanOrEqual(30);
+    const categories = INDIA_PROFILES.map((profile) => profile.category);
+    for (const kind of ["school", "coaching-institute", "training-institute", "news", "entertainment", ...INDIA_CATEGORY_SLUGS]) {
+      expect(categories, kind).toContain(kind);
+    }
+    expect(COLLECTION_THEMES.length).toBe(CATEGORY_PROFILES.length + INDIA_PROFILES.length);
+  });
+
+  it("gives every marketplace category, old and new, at least one theme", () => {
+    const covered = new Set(COLLECTION_PROFILES.flatMap((profile) => [profile.category, ...(profile.categories ?? [])]));
+    for (const slug of CATEGORY_SLUGS) expect(covered.has(slug), slug).toBe(true);
+  });
+
+  it("creates the India categories in a migration", () => {
+    const sql = readFileSync(join(process.cwd(), "supabase", "migrations", "20261107000019_india_categories.sql"), "utf8");
+    for (const slug of INDIA_CATEGORY_SLUGS) expect(sql).toContain(`'${slug}'`);
+    expect(sql).toContain("on conflict (slug) do nothing");
   });
 
   it("only lists categories that exist", () => {
@@ -230,6 +252,7 @@ describe("collection in the database", () => {
       );
     expect(await list("restaurant", null)).toContain("saffron-table");
     expect(await list("restaurant", null)).not.toContain("iron-yard");
-    expect(await list(null, "saffron")).toEqual(["saffron-table"]);
+    expect(await list(null, "saffron")).toContain("saffron-table");
+    expect(await list(null, "saffron table")).toEqual(["saffron-table"]);
   });
 });

@@ -35,7 +35,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
-      <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary-hover to-navy p-6 text-white shadow-card sm:p-8">
+      <section className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary-hover to-brand-blue p-6 text-white shadow-card sm:p-8">
         <div className="pointer-events-none absolute -top-16 -right-10 size-64 rounded-full bg-white/10 blur-2xl" aria-hidden />
         <div className="pointer-events-none absolute -bottom-24 left-1/3 size-72 rounded-full bg-accent/30 blur-3xl" aria-hidden />
         <div className="relative max-w-xl">

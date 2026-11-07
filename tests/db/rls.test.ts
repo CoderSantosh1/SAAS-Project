@@ -54,14 +54,15 @@ beforeAll(async () => {
 }, 60_000);
 
 describe("reference data", () => {
-  it("seeds the 50 categories with valid unique slugs", async () => {
+  it("seeds the 50 original and 5 India categories with valid unique slugs", async () => {
     const result = await queryAs<{ slug: string }>(
       db,
       VISITOR,
       `select slug from public.categories`,
     );
-    expect(result.rows).toHaveLength(50);
+    expect(result.rows).toHaveLength(55);
     expect(result.rows.map((row) => row.slug)).toContain("e-commerce");
+    expect(result.rows.map((row) => row.slug)).toContain("sweet-shop");
   });
 
   it("creates a profile when a user signs up", async () => {

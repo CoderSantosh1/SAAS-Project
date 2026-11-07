@@ -54,7 +54,9 @@ const SCHOOL_ICON_OPTIONS = [
 
 export const ICON_OPTIONS = [
   ...SCHOOL_ICON_OPTIONS,
-  ...Object.keys(INDUSTRY_ICONS).map((value) => ({ value, label: iconLabel(value) })),
+  ...Object.keys(INDUSTRY_ICONS)
+    .filter((value) => !SCHOOL_ICON_OPTIONS.some((option) => option.value === value))
+    .map((value) => ({ value, label: iconLabel(value) })),
 ];
 
 export function Icon({ name, size = 22, className }: { name: string; size?: number; className?: string }) {

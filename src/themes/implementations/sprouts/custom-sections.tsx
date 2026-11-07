@@ -49,7 +49,7 @@ export const playHero = defineSection({
             {props.highlight && (
               <>
                 {" "}
-                <span className="sp-underline text-[var(--site-primary)] sm:whitespace-nowrap">{props.highlight}</span>
+                <span className="sp-underline text-[var(--site-primary)]">{props.highlight}</span>
               </>
             )}
           </h1>

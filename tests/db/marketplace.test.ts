@@ -89,7 +89,7 @@ describe("list_public_categories", () => {
       null,
       `select slug, template_count from public.list_public_categories()`,
     );
-    expect(result.rows).toHaveLength(50);
+    expect(result.rows).toHaveLength(55);
     const count = (slug: string) => Number(result.rows.find((row) => row.slug === slug)!.template_count);
     expect(count("restaurant")).toBe(1);
     expect(count("yoga")).toBe(0);

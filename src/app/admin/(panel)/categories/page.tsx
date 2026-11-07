@@ -1,4 +1,4 @@
-import { Plus } from "lucide-react";
+import { Eye, FilePen, FolderTree, Plus, Star } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { AdminPage, DataTable, StatRow, StatusBadge, Td } from "@/components/admin/admin-ui";
@@ -22,10 +22,10 @@ export default async function AdminCategoriesPage() {
       action={<Link href="/admin/categories/new" className={buttonVariants()}><Plus className="size-4" aria-hidden />New category</Link>}
     >
       <StatRow stats={[
-        { label: "Total", value: categories.length },
-        { label: "Published", value: count("published") },
-        { label: "Draft", value: count("draft") },
-        { label: "Featured", value: categories.filter((category) => category.is_featured).length },
+        { label: "Total", icon: FolderTree, value: categories.length },
+        { label: "Published", icon: Eye, value: count("published") },
+        { label: "Draft", icon: FilePen, value: count("draft") },
+        { label: "Featured", icon: Star, value: categories.filter((category) => category.is_featured).length },
       ]} />
       <DataTable headers={["Order", "Category", "Status", "Themes", "Websites", ""]} isEmpty={categories.length === 0} empty="No categories yet.">
         {categories.map((category) => (

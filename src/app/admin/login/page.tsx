@@ -13,7 +13,7 @@ export default async function AdminLoginPage({
   const { next } = await searchParams;
 
   return (
-    <AuthCard title="Admin sign in" description="For authorized administrators only.">
+    <AuthCard variant="admin" title="Admin sign in" description="For authorized administrators only.">
       <AdminLoginForm next={safeNextPath(next, "/admin")} />
     </AuthCard>
   );

@@ -19,6 +19,13 @@
   --success: #16a34a;
   --warning: #f59e0b;
   --danger: #ef4444;
+
+  /* Shadows are variables so a design scope (such as .ui-glass) can restyle them. */
+  --card-shadow: 0 1px 2px rgb(16 24 39 / 0.04), 0 4px 16px rgb(16 24 39 / 0.04);
+  --elevated-shadow: 0 2px 4px rgb(16 24 39 / 0.04), 0 12px 32px rgb(16 24 39 / 0.08);
+
+  /* The second brand color of the glass look: purple flows into this blue. */
+  --brand-blue: #4c7dff;
 }
 
 @theme inline {
@@ -44,7 +51,92 @@
   --radius-lg: var(--radius);
   --radius-xl: 1.125rem;
 
-  --shadow-card: 0 1px 2px rgb(16 24 39 / 0.04), 0 4px 16px rgb(16 24 39 / 0.04);
+  --shadow-card: var(--card-shadow);
+  --shadow-elevated: var(--elevated-shadow);
+  --color-brand-blue: var(--brand-blue);
+}
+
+/* ---------------------------------------------------------------------------
+   Glass and gradient: the look of everything users see (public site, sign-in,
+   dashboard). A soft purple-to-blue mesh sits behind frosted, translucent
+   surfaces, and primary buttons glow. It works by re-pointing the platform's
+   own tokens inside .ui-glass, so every existing card, input and button picks
+   it up. The admin panel and rendered websites stay outside the scope.
+   --------------------------------------------------------------------------- */
+.ui-glass {
+  --background: rgb(255 255 255 / 0.45);
+  --surface: rgb(255 255 255 / 0.62);
+  --border: rgb(255 255 255 / 0.75);
+  --primary-light: rgb(118 103 245 / 0.12);
+  --card-shadow: inset 0 1px 0 rgb(255 255 255 / 0.7), 0 1px 2px rgb(49 46 129 / 0.04), 0 10px 30px -8px rgb(76 59 207 / 0.14);
+  --elevated-shadow: inset 0 1px 0 rgb(255 255 255 / 0.8), 0 18px 48px -12px rgb(76 59 207 / 0.28);
+  --field-border: rgb(118 103 245 / 0.22);
+
+  position: relative;
+  isolation: isolate;
+  background-color: #f3f1ff;
+}
+
+/* The mesh is fixed, so it stays put while content scrolls over it. */
+.ui-glass::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(60rem 40rem at 0% 0%, rgb(118 103 245 / 0.32), transparent 60%),
+    radial-gradient(50rem 36rem at 100% 10%, rgb(76 125 255 / 0.28), transparent 60%),
+    radial-gradient(44rem 32rem at 70% 100%, rgb(169 157 255 / 0.3), transparent 60%),
+    radial-gradient(36rem 28rem at 10% 90%, rgb(94 234 212 / 0.16), transparent 60%),
+    linear-gradient(180deg, #f6f4ff 0%, #eef2ff 100%);
+}
+
+.ui-glass :where(.bg-surface, .glass) {
+  -webkit-backdrop-filter: blur(18px) saturate(170%);
+  backdrop-filter: blur(18px) saturate(170%);
+}
+
+/* Fields stay crisp and clearly outlined on glass. */
+.ui-glass :where(input:not([type="checkbox"], [type="radio"], [type="color"], [type="hidden"]), select, textarea) {
+  background-color: rgb(255 255 255 / 0.85);
+  border-color: var(--field-border);
+}
+
+.ui-glass :where(input, select, textarea):focus-visible {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px rgb(118 103 245 / 0.18);
+}
+
+/* Primary actions flow from purple into blue and glow. */
+.ui-glass :where(.bg-primary) {
+  background-image: linear-gradient(135deg, var(--primary) 0%, var(--brand-blue) 100%);
+  box-shadow: 0 8px 22px -8px rgb(97 85 232 / 0.7), inset 0 1px 0 rgb(255 255 255 / 0.25);
+}
+
+.ui-glass :where(a.bg-primary, button.bg-primary):hover {
+  filter: brightness(1.06);
+}
+
+/* Big headings get a soft gradient ink. */
+.text-gradient {
+  background-image: linear-gradient(120deg, var(--navy) 10%, var(--primary) 55%, var(--brand-blue) 95%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .ui-glass {
+    --surface: #ffffff;
+    --background: #f5f6fa;
+    --border: #e5e7eb;
+  }
+
+  .ui-glass :where(.bg-surface, .glass) {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
 }
 
 @layer base {
@@ -64,6 +156,21 @@
   h4 {
     font-family: var(--font-heading);
     color: var(--navy);
+    text-wrap: balance;
+  }
+
+  html {
+    scroll-padding-top: 5rem;
+  }
+
+  ::selection {
+    background: color-mix(in srgb, var(--primary) 22%, transparent);
+  }
+
+  /* Keyboard focus is always visible on platform pages. */
+  :where(a, button, select, summary, [tabindex]):focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
   }
 
   /* Rendered websites use only their own tokens, never the platform's. */

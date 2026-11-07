@@ -32,6 +32,9 @@
   background-repeat: no-repeat;
   background-size: 100% 0.45em;
   padding-bottom: 0.08em;
+  /* Long highlights wrap; each line keeps its own underline. */
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
 }
 
 @media (prefers-reduced-motion: no-preference) {

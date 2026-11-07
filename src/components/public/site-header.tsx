@@ -21,15 +21,20 @@ export function SiteHeader({
   registrationsOpen: boolean;
 }) {
   return (
-    <header className="sticky top-0 z-20 border-b border-border bg-surface">
+    <header className="sticky top-0 z-20 border-b border-border bg-surface/70">
       <div className={`${PUBLIC_CONTAINER} flex h-16 items-center justify-between gap-4`}>
         <div className="flex items-center gap-8">
-          <Link href="/" className="font-heading text-xl font-bold text-primary">
+          <Link href="/" className="flex items-center gap-2 font-heading text-xl font-bold text-navy">
             {logoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={logoUrl} alt={name} className="h-9 w-auto max-w-40 object-contain" />
             ) : (
-              name
+              <>
+                <span className="flex size-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-brand-blue text-sm text-white shadow-lg shadow-primary/30" aria-hidden>
+                  {name.slice(0, 1)}
+                </span>
+                {name}
+              </>
             )}
           </Link>
           <nav aria-label="Main" className="hidden items-center gap-6 md:flex">

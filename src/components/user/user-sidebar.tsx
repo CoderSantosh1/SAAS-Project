@@ -9,72 +9,72 @@ import {
   LayoutGrid,
   LifeBuoy,
   Link2,
+  Plus,
   PlusCircle,
   Settings,
   Sparkles,
-  type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { cn } from "@/lib/utils";
+import type { ReactNode } from "react";
+import { AppShell, type ShellNavGroup } from "@/components/shared/app-shell";
 
-type NavItem = { label: string; href: string; icon: LucideIcon; ready: boolean };
-
-const NAV_ITEMS: NavItem[] = [
-  { label: "Overview", href: "/dashboard", icon: LayoutGrid, ready: true },
-  { label: "My Websites", href: "/dashboard/websites", icon: Globe, ready: true },
-  { label: "Create Website", href: "/dashboard/create-website", icon: PlusCircle, ready: true },
-  { label: "Templates", href: "/dashboard/templates", icon: Sparkles, ready: true },
-  { label: "Media Library", href: "/dashboard/media", icon: ImageIcon, ready: true },
-  { label: "Theme Code", href: "/dashboard/theme-code", icon: Code2, ready: true },
-  { label: "Domains", href: "/dashboard/domains", icon: Link2, ready: false },
-  { label: "Analytics", href: "/dashboard/analytics", icon: BarChart3, ready: false },
-  { label: "Billing", href: "/dashboard/billing", icon: CreditCard, ready: false },
-  { label: "Settings", href: "/dashboard/settings", icon: Settings, ready: true },
-  { label: "Help and Support", href: "/dashboard/support", icon: LifeBuoy, ready: true },
+export const USER_NAV: ShellNavGroup[] = [
+  { items: [{ label: "Overview", href: "/dashboard", icon: LayoutGrid }] },
+  {
+    label: "Build",
+    items: [
+      { label: "My Websites", href: "/dashboard/websites", icon: Globe },
+      { label: "Create Website", href: "/dashboard/create-website", icon: PlusCircle },
+      { label: "Templates", href: "/dashboard/templates", icon: Sparkles },
+      { label: "Media Library", href: "/dashboard/media", icon: ImageIcon },
+      { label: "Theme Code", href: "/dashboard/theme-code", icon: Code2 },
+    ],
+  },
+  {
+    label: "Grow",
+    items: [
+      { label: "Domains", href: "/dashboard/domains", icon: Link2, soon: true },
+      { label: "Analytics", href: "/dashboard/analytics", icon: BarChart3, soon: true },
+      { label: "Billing", href: "/dashboard/billing", icon: CreditCard, soon: true },
+    ],
+  },
+  {
+    label: "Account",
+    items: [
+      { label: "Settings", href: "/dashboard/settings", icon: Settings },
+      { label: "Help and Support", href: "/dashboard/support", icon: LifeBuoy },
+    ],
+  },
 ];
 
-export function UserSidebar() {
-  const pathname = usePathname();
-
+export function UserShell({ brandName, footer, children }: { brandName: string; footer: ReactNode; children: ReactNode }) {
   return (
-    <nav aria-label="Dashboard" className="flex gap-1 overflow-x-auto md:flex-col md:overflow-visible">
-      {NAV_ITEMS.map(({ label, href, icon: Icon, ready }) => {
-        const active = pathname === href || (href !== "/dashboard" && pathname.startsWith(`${href}/`));
-        const content = (
-          <>
-            <Icon className="size-4 shrink-0" aria-hidden />
-            <span className="whitespace-nowrap">{label}</span>
-            {!ready && <span className="ml-auto pl-2 text-xs text-muted-text">Soon</span>}
-          </>
-        );
-        const base = "flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium";
-
-        if (!ready) {
-          return (
-            <span key={href} aria-disabled="true" className={cn(base, "cursor-not-allowed text-muted-text")}>
-              {content}
-            </span>
-          );
-        }
-
-        return (
-          <Link
-            key={href}
-            href={href}
-            aria-current={active ? "page" : undefined}
-            className={cn(
-              base,
-              "transition-colors",
-              active
-                ? "bg-primary-light text-primary-hover"
-                : "text-secondary-text hover:bg-background hover:text-foreground",
-            )}
-          >
-            {content}
-          </Link>
-        );
-      })}
-    </nav>
+    <AppShell
+      tone="light"
+      className="ui-glass"
+      label="Dashboard"
+      groups={USER_NAV}
+      footer={footer}
+      brand={
+        <Link href="/dashboard" className="flex items-center gap-2.5 font-heading text-lg font-bold text-navy">
+          <span className="flex size-8 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-brand-blue text-sm text-white shadow-lg shadow-primary/25" aria-hidden>
+            {brandName.slice(0, 1)}
+          </span>
+          {brandName}
+        </Link>
+      }
+      topbar={
+        <Link
+          href="/dashboard/create-website"
+          className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-primary px-3 text-sm font-semibold text-white shadow-sm shadow-primary/30 transition-colors hover:bg-primary-hover"
+        >
+          <Plus className="size-4" aria-hidden />
+          <span className="hidden sm:inline">New website</span>
+          <span className="sr-only sm:hidden">New website</span>
+        </Link>
+      }
+    >
+      {children}
+    </AppShell>
   );
 }
